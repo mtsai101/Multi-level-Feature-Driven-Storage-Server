@@ -1,0 +1,8 @@
+analytics/darknet/*
+venv/*
+*.pyc
+*.csv
+.vscode/*
+.ipynb_checkpoints/*
+*.mp4
+*.avi
