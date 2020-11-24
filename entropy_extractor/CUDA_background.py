@@ -28,8 +28,7 @@ def ProcVid1(proc_frame,lr):
         if ret:
             n_frames += 1
             raw_frame_rgb = np.dsplit(in_frame, 3)
-            proc_frame.frame.array_r = raw_frame_rgb[2]; proc_frame.frame.array_g = raw_frame_rgb[1]; proc_frame.frame.array_b = raw_frame_rgb[0]
-            # proc_frame.frame.pin_mem()
+            proc_frame.frame.array_r[:] = raw_frame_rgb[2][:]; proc_frame.frame.array_g[:] = raw_frame_rgb[1][:]; proc_frame.frame.array_b[:] = raw_frame_rgb[0][:]
             proc_frame.ProcessFrame(lr)
             write_frame(process_out, proc_frame.res_frame)
         else:
@@ -60,16 +59,27 @@ class PinnedMem(object):
     def __repr__(self):
         return f'pinned = {self.pinned}'
 
+class PinnedMem_test(object):
+    def __init__(self, size, dtype=np.uint8):
+        self.array = np.empty(size,dtype)
+        cv2.cuda.registerPageLocked(self.array)
+        self.pinned = True
+        
+    def __del__(self):
+        cv2.cuda.unregisterPageLocked(self.array)
+        self.pinned = False
+    def __repr__(self):
+        return f'pinned = {self.pinned}'
 
 
 class ProcFrameCuda3:
     def __init__(self, rows, cols, store_res=False):
         self.rows, self.cols = rows, cols
         self.store_res = store_res
-        self.bgmog2 = cv2.cuda.createBackgroundSubtractorMOG2()
+        self.bgmog2 = cv2.cuda.createBackgroundSubtractorMOG()
         self.stream = cv2.cuda_Stream()
 
-        self.frame = PinnedMem((rows,cols,3))
+        self.frame = PinnedMem((rows,cols,1))
 
 
         self.frame_device = cv2.cuda_GpuMat(rows,cols,cv2.CV_8UC3)
@@ -83,17 +93,17 @@ class ProcFrameCuda3:
 
         self.frame_device_mask = cv2.cuda_GpuMat(rows,cols,cv2.CV_8UC1)
 
+
         self.fg_host = PinnedMem((rows,cols,1))
         
     def ProcessFrame(self,lr):
-
 
         self.frame_device.upload(np.concatenate([self.frame.array_r, self.frame.array_g, self.frame.array_b], axis=2), self.stream)
         self.frame_device_r.upload(self.frame.array_r,self.stream) 
         self.frame_device_g.upload(self.frame.array_g,self.stream)
         self.frame_device_b.upload(self.frame.array_b,self.stream)
 
-        self.bgmog2.apply(self.frame_device, lr,self.stream, self.frame_device_fg_r)
+        self.bgmog2.apply(self.frame_device, lr,self.stream, self.frame_device_mask)
         cv2.cuda.bitwise_and(self.frame_device_r, self.frame_device_r, self.frame_device_fg_r, self.frame_device_mask, self.stream)
         cv2.cuda.bitwise_and(self.frame_device_g, self.frame_device_g, self.frame_device_fg_g, self.frame_device_mask, self.stream)
         cv2.cuda.bitwise_and(self.frame_device_b, self.frame_device_b, self.frame_device_fg_b, self.frame_device_mask, self.stream)
@@ -101,19 +111,23 @@ class ProcFrameCuda3:
         self.frame_device_fg_r.download(self.stream,self.fg_host.array_r)   
         self.frame_device_fg_g.download(self.stream,self.fg_host.array_g)           
         self.frame_device_fg_b.download(self.stream,self.fg_host.array_b)
-
+        
+        self.frame_device_fg_r.setTo(0, self.stream)
+        self.frame_device_fg_g.setTo(0, self.stream)
+        self.frame_device_fg_b.setTo(0, self.stream)
         self.stream.waitForCompletion() 
+
         self.res_frame = np.concatenate(
                     [
                         self.fg_host.array_r, 
                         self.fg_host.array_g, 
                         self.fg_host.array_b
-                    ]
+                    ], axis=2
                 )
+
     
 
 proc_frame_cuda3 = ProcFrameCuda3(rows,cols,check_res)
 gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3,lr)
 # print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
-# print(f'Speedup over CPU: {cpu_time_0/gpu_time_3:.2f}')
 
