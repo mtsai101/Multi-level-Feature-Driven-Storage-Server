@@ -125,8 +125,6 @@ class ProcFrameCuda3:
                 )
 
 if __name__=="__main__":
-    # proc_frame_cuda3 = ProcFrameCuda3(rows,cols,check_res)
-    # gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3,lr, input_path, output_path)
     cols, rows = get_video_size("")
     proc_frame_cuda3 = ProcFrameCuda3(rows,cols,check_res)
 
@@ -159,7 +157,3 @@ if __name__=="__main__":
             if os.path.isfile(input_path) and not os.path.isfile(output_path):
                 gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3, lr, rows, cols, input_path, output_path)
                     
-
-    
-#   print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
-
