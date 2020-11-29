@@ -127,7 +127,7 @@ class ProcFrameCuda3:
 if __name__=="__main__":
     cols, rows = get_video_size("")
     proc_frame_cuda3 = ProcFrameCuda3(rows,cols,check_res)
-
+    # some modify from chopper
     for i in range(4,10):
         dir_path = "/mnt/data6/minhan/SmartPole/Pole1/2020-11-0"+str(i)+"_00-00-00"
 
