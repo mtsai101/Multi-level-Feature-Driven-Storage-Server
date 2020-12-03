@@ -9,11 +9,7 @@ import sys
 # input_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_15:00:36.mp4"
 # file_output = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
 
-<<<<<<< HEAD
-input_path = "/home/min/Pole1_2020-11-04_16-00-01.mp4"
-file_output = "/home/min/background_Pole1_2020-11-04_16-00-01.mp4"
-=======
->>>>>>> c7f56ebcd694d89a622504e3f921a489d191cc82
+
 
 
 lr = 0.05
