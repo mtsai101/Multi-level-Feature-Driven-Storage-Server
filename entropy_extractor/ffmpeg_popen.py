@@ -27,11 +27,13 @@ output_set={
     }
 
 def get_video_size(filename):
-    print('Getting video size for {!r}'.format(filename))
-    probe = ffmpeg.probe(filename)
-    video_info = next(s for s in probe['streams'] if s['codec_type'] == 'video')
-    width = int(video_info['width'])
-    height = int(video_info['height'])
+    # print('Getting video size for {!r}'.format(filename))
+    # probe = ffmpeg.probe(filename)
+    # video_info = next(s for s in probe['streams'] if s['codec_type'] == 'video')
+    # width = int(video_info['width'])
+    # height = int(video_info['height'])
+    width = 2048
+    height = 1536
     return width, height
 
 def start_ffmpeg_process_in(in_filename):

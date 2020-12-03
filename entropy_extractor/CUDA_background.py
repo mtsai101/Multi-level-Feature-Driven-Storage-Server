@@ -6,8 +6,8 @@ from functools import partial
 import matplotlib.pyplot as plt
 import cv2
 
-input_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_15:00:36.mp4"
-file_output = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
+input_path = "/home/min/Pole1_2020-11-04_16-00-01.mp4"
+file_output = "/home/min/background_Pole1_2020-11-04_16-00-01.mp4"
 
 cols, rows = get_video_size(input_path)
 
@@ -126,6 +126,7 @@ class ProcFrameCuda3:
                 )
 
 if __name__=="__main__":
+    # pass
     proc_frame_cuda3 = ProcFrameCuda3(rows,cols,check_res)
     gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3,lr)
 #   print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')

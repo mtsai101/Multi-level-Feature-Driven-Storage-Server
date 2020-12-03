@@ -48,6 +48,8 @@ def get_conv_entropy(input_file):
     
     while True:
         ret, frame = vs.read()
+        if ret is False:
+          break
         frame = tf.image.resize(frame, [512,512], method='bilinear')
         frame = tf.expand_dims(frame, axis=0)/255.0
         conv_feature = simpleConv(frame)
@@ -55,13 +57,12 @@ def get_conv_entropy(input_file):
         entropy_value=0
         for channel in range(4):
             signal = tf.keras.backend.flatten(conv_feature[:,:,:,channel]).numpy().round(decimals=3)
-            entropy_value += conv_entropy(signal)
-        
-        break
+            total_entropy += conv_entropy(signal)
+
     return total_entropy
 
 if __name__=="__main__":
-    input_file = "/home/min/LiteOn_P1_2019-11-12_15:00:36.mp4"
+    input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
     s = time.time()
     total_entropy = get_conv_entropy(input_file)
     print(time.time()-s)

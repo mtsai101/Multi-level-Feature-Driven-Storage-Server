@@ -36,12 +36,11 @@ def edge_entropy(signal):
     
 
 def conv_entropy(signal):
-    
     try:
-        hist_prob = np.histogram(signal, bins=np.arange(0,1.001,0.001,dtype=float), density=True)[0]
+        hist_prob = np.histogram(signal, bins=np.arange(0,1.001,0.001,dtype=float), density=True)[0]/1000
         nonzero_p = np.nonzero(hist_prob)
         ent=np.sum([p*np.log2(1.0/p) for p in hist_prob[nonzero_p]])
-        print(ent)
+
         return ent
 
     except Exception as e:

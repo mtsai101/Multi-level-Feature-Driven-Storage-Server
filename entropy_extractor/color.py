@@ -4,27 +4,30 @@ import time
 import numpy as np
 import concurrent.futures
 
-def get_color_entropy(input_path):
+def get_color_entropy(input_path, return_value):
     vs = cv2.VideoCapture(input_path)
     total_entropy = 0
     frame_count = 0
     while True:
-        frame_count+=1
+
         ret, frame = vs.read()
         if ret is False:
             break
+        if frame_count%24==0:
+            frame_rgb = np.dsplit(frame, 3)
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                entropy_list = {executor.submit(color_entropy, frame_single_channel): frame_single_channel for frame_single_channel in frame_rgb}
+            
+            for entropy in entropy_list:
+                total_entropy += entropy.result()
 
-        frame_rgb = np.dsplit(frame, 3)
+        frame_count +=1
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            entropy_list = {executor.submit(color_entropy, frame_single_channel): frame_single_channel for frame_single_channel in frame_rgb}
-        
-        for entropy in entropy_list:
-            total_entropy += entropy.result()
+    return_value.value = total_entropy
 
-        
 
-    return total_entropy
+
 
 
 if __name__=="__main__":
