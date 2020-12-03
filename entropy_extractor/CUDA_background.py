@@ -130,4 +130,38 @@ if __name__=="__main__":
     proc_frame_cuda3 = ProcFrameCuda3(rows,cols,check_res)
     gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3,lr)
 #   print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
+    # for i in range(20,30):
+    #     dir_path = "/mnt/ssd/minhan/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
 
+    #     vli_back_dir = os.path.join(dir_path,"background")
+    #     if not os.path.isdir(vli_back_dir):
+    #         os.mkdir(vli_back_dir)
+
+    #     # remove broken video
+    #     vli = os.listdir(dir_path)
+    #     for v in vli:
+    #         input_path = os.path.join(dir_path, v)
+    #         if not os.path.isfile(input_path):
+    #             continue
+    #         try:
+    #             probe = ffmpeg.probe(input_path)
+    #         except Exception as e:
+    #             broken_hour = input_path.split("/")[-1].split("_")[-1].split("-")[0]
+    #             broken_day = input_path.split("/")[-1].split("_")[1].split("-")[-1]
+    #             rm_cmd = "rm " + os.path.join(dir_path, "Pole1_2020-11-") + broken_day + "_" + broken_hour+"*"
+    #             print(e)
+    #             print(rm_cmd)
+    #             exit()
+    #             # os.system(rm_cmd)
+    #     try:
+    #     #process good video
+    #         vli = os.listdir(dir_path)
+    #         for v in vli:
+    #             input_path = os.path.join(dir_path, v)
+    #             output_path = os.path.join(vli_back_dir, "background_"+v)
+    #             print(input_path, output_path)
+    #             # if os.path.isfile(input_path) and not os.path.isfile(output_path):
+    #             #     gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3, lr, rows, cols, input_path, output_path)
+    #     except Exception as e:
+    #         print(e)       
+    #         exit()   
