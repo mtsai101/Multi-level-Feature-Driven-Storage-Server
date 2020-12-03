@@ -6,14 +6,8 @@ import ffmpeg
 # from matplotlib import pyplot as plt
 import sys
 import cv2
-import logger
 import subprocess
 
-import tensorflow as tf
-
-# from tensorflow.image import ResizeMethod 
-from tensorflow.keras import datasets, layers, models
-import matplotlib.pyplot as plt
 input_set={
         # "hwaccel":'cuda',
         # "hwaccel_output_format":'cuda'
@@ -29,9 +23,10 @@ output_set={
 def get_video_size(filename):
     # print('Getting video size for {!r}'.format(filename))
     # probe = ffmpeg.probe(filename)
-    # video_info = next(s for s in probe['streams'] if s['codec_type'] == 'video')
-    # width = int(video_info['width'])
-    # height = int(video_info['height'])
+    # video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+    # width = int(video_stream['width'])
+    # height = int(video_stream['height'])
+
     width = 2048
     height = 1536
     return width, height
