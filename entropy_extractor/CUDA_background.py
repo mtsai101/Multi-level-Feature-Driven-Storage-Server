@@ -2,22 +2,21 @@ import os
 import time
 import numpy as np
 from ffmpeg_popen import get_video_size, start_ffmpeg_process_in, start_ffmpeg_process_out, read_frame, write_frame, output_set
+import ffmpeg
 from functools import partial
 import matplotlib.pyplot as plt
 import cv2
 
-input_path = "/home/min/Pole1_2020-11-04_16-00-01.mp4"
-file_output = "/home/min/background_Pole1_2020-11-04_16-00-01.mp4"
+# input_path = "/home/min/LiteOn_P1_2019-11-10_15:20:05.mp4"
+# file_output = "/home/min/background_LiteOn_P1_2019-11-10_15:20:05.mp4"
 
-cols, rows = get_video_size(input_path)
 
 lr = 0.05
 check_res = True
 
-def ProcVid1(proc_frame,lr):
+def ProcVid1(proc_frame, lr, rows, cols, input_path, output_path):
 
-    # process_in = start_ffmpeg_process_in(input_path)
-    process_out = start_ffmpeg_process_out(file_output, output_set, cols, rows)
+    process_out = start_ffmpeg_process_out(output_path, output_set, cols, rows)
 
     n_frames = 0
     start = time.time()
@@ -127,7 +126,46 @@ class ProcFrameCuda3:
 
 if __name__=="__main__":
     # pass
+    cols = 2048
+    rows = 1536
     proc_frame_cuda3 = ProcFrameCuda3(rows,cols,check_res)
-    gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3,lr)
-#   print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
+    os.environ["CUDA_VISIBLE_DEVICES"]="2"
+    for i in range(20,30):
+        dir_path = "/home/min/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
+
+        vli_back_dir = os.path.join(dir_path,"background")
+        if not os.path.isdir(vli_back_dir):
+            os.mkdir(vli_back_dir)
+
+        # remove broken video
+        vli = os.listdir(dir_path)
+        for v in vli:
+            input_path = os.path.join(dir_path, v)
+            if not os.path.isfile(input_path):
+                continue
+            try:
+                probe = ffmpeg.probe(input_path)
+                
+            except Exception as e:
+                broken_hour = input_path.split("/")[-1].split("_")[-1].split("-")[0]
+                broken_day = input_path.split("/")[-1].split("_")[1].split("-")[-1]
+                rm_cmd = "rm " + os.path.join(dir_path, "Pole1_2020-11-") + broken_day + "_" + broken_hour+"*"
+                print(e)
+                print(rm_cmd)
+                os.system(rm_cmd)
+        try:
+        #process good video
+            vli = os.listdir(dir_path)
+            for v in vli:
+                input_path = os.path.join(dir_path, v)
+                output_path = os.path.join(vli_back_dir, "background_"+v)
+                
+                if os.path.isfile(input_path):
+                    # print(input_path)
+                    gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3, lr, rows, cols, input_path, output_path)
+
+        except Exception as e:
+            print(e)       
+            exit()   
+
 
