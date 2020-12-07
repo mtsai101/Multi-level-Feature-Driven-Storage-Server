@@ -6,27 +6,26 @@ from functools import partial
 import matplotlib.pyplot as plt
 import cv2
 
-input_path = "/home/min/Pole1_2020-11-04_16-00-01.mp4"
-file_output = "/home/min/background_Pole1_2020-11-04_16-00-01.mp4"
+# input_path = "/home/min/Pole1_2020-11-04_16-00-01.mp4"
+# file_output = "/home/min/background_Pole1_2020-11-04_16-00-01.mp4"
 
-cols, rows = get_video_size(input_path)
+# cols, rows = get_video_size(input_path)
 
 lr = 0.05
 check_res = True
+rows = 1536
+cols = 2048
 
-def ProcVid1(proc_frame,lr):
+def ProcVid1(proc_frame, input_path, output_path):
+    global rows, cols
+    process_out = start_ffmpeg_process_out(output_path, output_set, cols, rows)
 
-    # process_in = start_ffmpeg_process_in(input_path)
-    process_out = start_ffmpeg_process_out(file_output, output_set, cols, rows)
 
-    n_frames = 0
-    start = time.time()
     cap = cv2.VideoCapture(input_path)
-
+    
     while True:
         ret, in_frame = cap.read()
         if ret:
-            n_frames += 1
             raw_frame_rgb = np.dsplit(in_frame, 3)
             proc_frame.frame.array_r[:] = raw_frame_rgb[2][:]; proc_frame.frame.array_g[:] = raw_frame_rgb[1][:]; proc_frame.frame.array_b[:] = raw_frame_rgb[0][:]
             proc_frame.ProcessFrame(lr)
@@ -38,8 +37,6 @@ def ProcVid1(proc_frame,lr):
     process_out.wait()
     
 
-    end = time.time()
-    return (end - start)*1000/n_frames, n_frames
 
 class PinnedMem(object):
     def __init__(self, size, dtype=np.uint8):
@@ -59,23 +56,11 @@ class PinnedMem(object):
     def __repr__(self):
         return f'pinned = {self.pinned}'
 
-class PinnedMem_test(object):
-    def __init__(self, size, dtype=np.uint8):
-        self.array = np.empty(size,dtype)
-        cv2.cuda.registerPageLocked(self.array)
-        self.pinned = True
-        
-    def __del__(self):
-        cv2.cuda.unregisterPageLocked(self.array)
-        self.pinned = False
-    def __repr__(self):
-        return f'pinned = {self.pinned}'
-
 
 class ProcFrameCuda3:
-    def __init__(self, rows, cols, store_res=False):
-        self.rows, self.cols = rows, cols
-        self.store_res = store_res
+    def __init__(self):
+        self.rows = 1536
+        self.cols = 2048
         self.bgmog2 = cv2.cuda.createBackgroundSubtractorMOG()
         self.stream = cv2.cuda_Stream()
 
@@ -125,9 +110,14 @@ class ProcFrameCuda3:
                     ], axis=2
                 )
 
+
+
+
 if __name__=="__main__":
-    # pass
-    proc_frame_cuda3 = ProcFrameCuda3(rows,cols,check_res)
-    gpu_time_3, n_frames = ProcVid1(proc_frame_cuda3,lr)
-#   print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
+
+    input_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_15:00:36.mp4"
+    output_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
+    proc_frame_cuda3 = ProcFrameCuda3()
+    ProcVid1(proc_frame_cuda3, input_path, output_path)
+    # print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
 

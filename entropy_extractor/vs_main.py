@@ -2,42 +2,94 @@ from color import get_color_entropy
 from edge import get_edge_entropy
 from conv import get_conv_entropy
 from temporal import get_temp_conv_entropy
-from multiprocessing import Process, Value
 from influxdb import InfluxDBClient
+from CUDA_background import ProcVid1, ProcFrameCuda3
+from shot_detection import ShotDetector
+import multiprocessing as mp
+import time
+import os 
+import concurrent.futures
 
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 
-def get_visual_feature(input_path):
-    color_entropy = Value('d', 0.0); edge_entropy = Value('d', 0.0); conv_entropy = Value('d', 0.0); temp_entropy = Value('d', 0.0)
-    color_proc = Process(target=get_color_entropy, args=(input_path, color_entropy,))
-    edge_proc = Process(target=get_edge_entropy, args=(input_path, edge_entropy,))
-    conv_proc = Process(target=get_conv_entropy, args=(input_path, conv_entropy,))
-    temp_proc = Process(target=get_temp_conv_entropy, args=(input_path, temp_entropy,))
+
+mp.set_start_method('spawn') # This is important for multiprocessing CUDA
+def background_subtraction(pending_tuple):
+    proc_frame_cuda3 = ProcFrameCuda3()
+    ProcVid1(proc_frame_cuda3, pending_tuple[0], pending_tuple[1])
+    print(pending_tuple[0])
+    # del proc_frame_cuda3
+
+def launch_shot_detector(pending_tuple):
+    s = time.time()
+    shotDetector = ShotDetector()
+    shotDetector.detect(pending_tuple[1])
+    shotDetector.save_results(pending_tuple[0])
+    
+    print("Finst detect the shots of ", pending_tuple[1])
+    print("Total %d frames, take %f sec"%(shotDetector.frame_num, time.time()-s))
+    del shotDetector
+
+def feature_procs(input_path, shot_list):
+    
+    s = time.time()
+    color_entropy = mp.Value('d', 0.0); edge_entropy = mp.Value('d', 0.0); conv_entropy = mp.Value('d', 0.0); temp_entropy = mp.Value('d', 0.0)
+    color_proc = mp.Process(target=get_color_entropy, args=(input_path, color_entropy,))
+    edge_proc = mp.Process(target=get_edge_entropy, args=(input_path, edge_entropy,))
+    conv_proc = mp.Process(target=get_conv_entropy, args=(input_path, conv_entropy,))
+    temp_proc = mp.Process(target=get_temp_conv_entropy, args=(input_path, temp_entropy,))
     color_proc.start(); edge_proc.start(); conv_proc.start(); temp_proc.start()
     color_proc.join(); edge_proc.join(); conv_proc.join(); temp_proc.join()
 
-
+    print("color: %f, edge: %f, conv: %f, temp: %f"%(color_entropy.value,edge_entropy.value,conv_entropy.value,temp_entropy.value))
+    
     json_body = [
                 {
-                    "measurement": "analy_result",
+                    "measurement": "visual_features_entropy_unnormalized",
                     "tags": {
-                        "name": str(S_decision.clip_name),
-                        "a_type": str(S_decision.a_type),
-                        "day_of_week":int(day_idx),
-                        "time_of_day":int(time_idx),
-                        "host": "webcamPole1"
+                        "name": str(input_path)
                     },
                     "fields": {
-                        "a_parameter": float(self.framesCounter),
-                        "fps": float(S_decision.fps),
-                        "bitrate": float(S_decision.bitrate),
-                        "time_consumption": float(self.processing_time),
-                        "target": int(self.target_counter)
+                        "color": float(color_entropy.value),
+                        "edge": float(edge_entropy.value),
+                        "conv": float(conv_entropy.value),
+                        "temp": float(temp_entropy.value)
                     }
                 }
             ]
-
+    DBclient.write_points(json_body)
 
 if __name__=="__main__":
-    input_file = "/home/min/LiteOn_P1_2019-11-12_15:00:36.mp4"
-    get_visual_feature(input_file)
+    feature_pending_list = [] # (input_path, back_path)
+    month = 11; day=4
+    month = str(month) if month>9 else "0"+str(month)
+    day = str(day) if day>9 else "0"+str(day)
+    input_dir = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/SmartPole/Pole1/2020-"+str(month)+"-"+str(day)+"_00-00-00"
+    v_li = os.listdir(input_dir)
+
+    for v in v_li:
+        input_path = os.path.join(input_dir, v)
+        output_dir = os.path.join(input_dir,"background")
+        if not os.path.isfile(input_path):
+            continue
+        if not os.path.isdir(os.path.join(input_dir,"background")):
+            os.mkdir(os.path.join(input_dir,"background"))
+
+        back_path = os.path.join(output_dir,"background_"+v)
+        feature_pending_list.append((input_path, back_path)) 
+
+        
+    # if the video already be background subtraction, leave it be commented
+    # with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    #     executor.map(background_subtraction, feature_pending_list)
+
+    # print("Background Subtraction Completed")
+
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        executor.map(launch_shot_detector, feature_pending_list)
+    print("Shot Detection Completed")
+        
+    
+    # feature_procs(input_path, shotDetector.shot_list)
+    # print("Feature Extraction Completed")

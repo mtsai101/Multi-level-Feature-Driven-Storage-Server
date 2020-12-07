@@ -63,7 +63,7 @@ class EdgeHistogramComputer():
 
 
 edgeHistogramComputer = EdgeHistogramComputer(12,12)
-def get_edge_entropy(input_file):
+def get_edge_entropy(input_file, return_value):
     vs = cv2.VideoCapture(input_file)
     total_entropy = 0
     frame_count = 0
@@ -77,7 +77,7 @@ def get_edge_entropy(input_file):
             total_entropy += edge_entropy(descriptor)
         frame_count += 1
         
-    return total_entropy
+    return_value.value = total_entropy
 
 if __name__=="__main__":
     input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"

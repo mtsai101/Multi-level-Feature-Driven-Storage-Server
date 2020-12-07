@@ -1,12 +1,11 @@
-import tensorflow as tf
-from tensorflow.keras import datasets, layers, models
 from entropy import conv_entropy
 import numpy as np
 import time
 import cv2
-
-gpu = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(gpu[0], True)
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+gpus = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
 
 
 class SimpleConv(tf.keras.Model):
@@ -41,29 +40,27 @@ class SimpleConv(tf.keras.Model):
     return x
 
 simpleConv = SimpleConv()
-def get_conv_entropy(input_file):
+def get_conv_entropy(input_file, return_value):
+  total_entropy = 0
+  vs = cv2.VideoCapture(input_file)
+  frame_count = 0
+  while True:
+    ret, frame = vs.read()
+    if ret is False:
+      break
+    if frame_count%24==0:
+      frame = tf.image.resize(frame, [512,512], method='bilinear')
+      frame = tf.expand_dims(frame, axis=0)/255.0
+      conv_feature = simpleConv(frame)
+      for channel in range(4):
+          signal = tf.keras.backend.flatten(conv_feature[:,:,:,channel]).numpy().round(decimals=3)
+          total_entropy += conv_entropy(signal)
+    frame_count += 1
+  return_value.value = total_entropy
 
-    total_entropy = 0
-    vs = cv2.VideoCapture(input_file)
-    
-    while True:
-        ret, frame = vs.read()
-        if ret is False:
-          break
-        frame = tf.image.resize(frame, [512,512], method='bilinear')
-        frame = tf.expand_dims(frame, axis=0)/255.0
-        conv_feature = simpleConv(frame)
-        # print(conv_feature)
-        entropy_value=0
-        for channel in range(4):
-            signal = tf.keras.backend.flatten(conv_feature[:,:,:,channel]).numpy().round(decimals=3)
-            total_entropy += conv_entropy(signal)
-
-    return total_entropy
-
-if __name__=="__main__":
-    input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
-    s = time.time()
-    total_entropy = get_conv_entropy(input_file)
-    print(time.time()-s)
-    print(total_entropy)
+# if __name__=="__main__":
+#     input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
+#     s = time.time()
+#     total_entropy = get_conv_entropy(input_file)
+#     print(time.time()-s)
+#     print(total_entropy)

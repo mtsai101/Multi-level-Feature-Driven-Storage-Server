@@ -1,5 +1,10 @@
+import cv2
+import numpy as np
+from influxdb import InfluxDBClient
+DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+import time
 class ShotDetector():
-    def __init__(self, threshold=12, min_percent=0.95, min_scene_len=2, block_size=8):
+    def __init__(self, threshold=12, min_percent=0.999, min_scene_len=48, block_size=8):
         """Initializes threshold-based scene detector object."""
         self.threshold = int(threshold)
         self.min_percent = min_percent
@@ -15,28 +20,26 @@ class ShotDetector():
         ratio = 1.0 - self.min_percent if large_ratio else self.min_percent
         min_pixels = int(num_pixel_values * ratio)
 
-        curr_frame_amt = 0
+        self.curr_frame_amt = 0
         curr_frame_row = 0
 
         while curr_frame_row < frame.shape[0]:
-
             block = frame[curr_frame_row : curr_frame_row + self.block_size, :, :]
             if large_ratio:
-                curr_frame_amt += int(numpy.sum(block > self.threshold))
+                self.curr_frame_amt += int(np.sum(block > self.threshold))
             else:
-                curr_frame_amt += int(numpy.sum(block <= self.threshold))
-
-            if curr_frame_amt > min_pixels:
+                self.curr_frame_amt += int(np.sum(block <= self.threshold))
+            
+            if self.curr_frame_amt > min_pixels:
                 return not large_ratio
             curr_frame_row += self.block_size
         return large_ratio
 
     def process_frame(self, frame_img):
-        print(self.frame_num, frame_img)
         under_th = self.frame_under_threshold(frame_img) % 2
         if self.processed_frame:
             if under_th ^ self.shot_list[-1][0]:
-                if(self.frame_num - self.last_cut)>=self.min_scene_len:
+                if(self.frame_num - self.last_cut)>=self.min_scene_len: ## 0/1 shot should longer than 48 frames
                     self.shot_list.append([ under_th % 2, self.frame_num-1])
                     self.last_cut = self.frame_num
                 elif len(self.shot_list)==1:
@@ -47,8 +50,8 @@ class ShotDetector():
         else:           
             self.shot_list.append([under_th, 0])
             self.last_cut = 0
-            
-        print(self.shot_list)
+
+
         self.processed_frame = True
         self.frame_num += 1
 
@@ -60,11 +63,46 @@ class ShotDetector():
         if len(self.shot_list)>1:
             del self.shot_list[0]
 
+    def detect(self, input_path): # the input_path here is background subtraction already
+        cap = cv2.VideoCapture(input_path)
+        count = 0
+        while True:
+            ret, frame = cap.read()
+            if ret is False:
+                print(self.frame_num)
+                break
+            self.process_frame(frame)
+            
+        self.post_process()
+
+
+    def save_results(self, input_path): # the input_path here is the raw video
+        json_body = [
+                {
+                    "measurement": "shot_list",
+                    "tags": {
+                        "name": str(input_path)
+                    },
+                    "fields": {
+                        "list": str(self.shot_list)
+                    }
+                }
+            ]
+        DBclient.write_points(json_body)
+
 if __name__=="__main__":
+    # s = time.time()
+    # shotDetector = ShotDetector()
+    # input_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-10_15:20:05.mp4"
+    # shotDetector.detect(input_path)
+    # shotDetector.save_results("/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-10_15:20:05.mp4")
+    # print(shotDetector.shot_list, time.time()-s)
+    # del shotDetector
+    s = time.time()
     shotDetector = ShotDetector()
-    video = [0,0,0,0,1,0,1,1,1,0,0]
-    for n, v in enumerate(video):
-        shotDetector.process_frame(v)
-    shotDetector.post_process()
-    print(shotDetector.shot_list)
+    input_path="/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
+    shotDetector.detect(input_path)
+    shotDetector.save_results("/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_15:00:36.mp4")
+    print(shotDetector.shot_list, time.time()-s)
+    del shotDetector
     
