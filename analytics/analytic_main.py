@@ -58,7 +58,7 @@ class Analytic_Platform():
 
         while True:
             try:
-                print("[INFO] Listening from IAE")
+                print("[INFO] Listening from SLE")
                 conn = self.listener.accept()
                 print('connection accepted from', self.listener.last_accepted)
                 while True:

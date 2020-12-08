@@ -31,7 +31,7 @@ V = 3000
 iATable = IATable(False)
 downTimeTable = DownTimeTable(False)
 downRatioTable = DownRatioTable(False)
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 
 def P_greedy():
     clip_list =[]

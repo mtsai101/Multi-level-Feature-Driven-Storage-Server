@@ -38,7 +38,7 @@ class Analyst(object):
         self.write2disk = False
         self.writer = None
         self.clip_name = None
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         self.busy = 0 
         self.target_counter = 0
 

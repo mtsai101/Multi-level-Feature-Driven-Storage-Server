@@ -58,7 +58,7 @@ Our emulation following the flow chart below. Virtual Camera emulates the proced
   ```
   Open Information Amount Estimator:
   ```
-    python3 start_IAE.py
+    python3 start_SLE.py
   ```
   Open Virtual Camera (switch mode to 1):
   ```

@@ -21,7 +21,7 @@ class Frame(Record):
     timestamp = String()
     img = Bytes()
 
-influx_client = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+influx_client = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 
 
 if not os.path.isdir("./storage_server_volume"):
@@ -83,8 +83,8 @@ class VideoSaver(object):
                     influx_client.write_points(json_body)
 
                 self.writer.write(frame)
-                self.conn_send2IAE.send(True)
-                    print("Send signal to IAE")
+                self.conn_send2SLE.send(True)
+                    print("Send signal to SLE")
                 self.count = self.count + 1
             except Exception as e:
                 print(e)

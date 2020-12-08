@@ -99,7 +99,7 @@ def brute_force(c, dp, esti_info_amount,cur_dp):
 
 if __name__=='__main__':
     start=time.time()
-    DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+    DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
     
     result = DBclient.query('SELECT * FROM raw_11_8_down')
     result_point = list(result.get_points(measurement='raw_11_8_down'))

@@ -19,23 +19,11 @@ class WorkloadGen():
     def __init__(self):
         self.mode = 1
         self.pending_list = list()
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         # the current time 
-        self.cur_clock = datetime.datetime(
-            year = 2019,
-            month = 11,
-            day = 9,
-            hour = 23,
-            minute = 0
-        )   
+        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 4, hour = 6)   
         #the last updated time
-        self.last_updated_clocks = datetime.datetime(
-            year = 2019,
-            month = 11,
-            day = 8,
-            hour = 6,
-            minute = 0
-        )
+        self.last_updated_clocks = datetime.datetime(year = 2020, month = 11, day = 3, hour = 18)
 
         self.end_day = 9
 
@@ -44,7 +32,7 @@ class WorkloadGen():
         self.algo_type = 'FIFO' # FIFO,EF,EFR,Greedy
 
 
-        self.conn_send2IAE = None
+        self.conn_send2SLE = None
         self.conn_listen2AP = None
         self.conn_send2DDM = None
         self.conn_listen2DP = None
@@ -92,16 +80,16 @@ class WorkloadGen():
                 print("Not detecting DDM, reconnecting...")
 
 
-    def open_IAE_sending_port(self):
+    def open_SLE_sending_port(self):
         while True:
             time.sleep(1)
             try:
-                if self.conn_send2IAE is None:
+                if self.conn_send2SLE is None:
                     address = ('localhost',5000)
-                    self.conn_send2IAE = Client(address)
-                    print("[INFO] Connected with IAE...")
+                    self.conn_send2SLE = Client(address)
+                    print("[INFO] Connected with SLE...")
             except Exception as e:
-                print("Not detecting IAE, reconnecting...")
+                print("Not detecting SLE, reconnecting...")
 
     ## this port is for simulation
     def open_AP_listening_port(self):
@@ -142,9 +130,9 @@ class WorkloadGen():
     @setInterval(1)
     def check_ready(self):
         if self.mode == 1:
-            IAE_ready = self.conn_send2IAE 
+            SLE_ready = self.conn_send2SLE 
             AP_ready = self.conn_listen2AP
-            if IAE_ready and AP_ready:
+            if SLE_ready and AP_ready:
                 self.ready.set()
         elif self.mode == 2:
             DDM_ready = self.conn_send2DDM
@@ -170,12 +158,13 @@ class WorkloadGen():
     def do(self):
         while True:
             if self.mode == 1:
-                t = threading.Thread(target=self.IAE_gen_workload)
+                t = threading.Thread(target=self.SLE_gen_workload)
                 t.start()
                 t.join()    
                 print("Listening from AP & Waiting for generating the next batch of video...")
                 finish = self.conn_listen2AP.recv() 
-                self.clock += trigger_interval
+                self.last_updated_clocks = self.cur_clock
+                self.cur_clock += trigger_interval
                 break
                 
 
@@ -193,12 +182,11 @@ class WorkloadGen():
         print("Evaluation finish!!!")
         
             
-    def IAE_gen_workload(self):
+    def SLE_gen_workload(self):
         try:
             self.lock.acquire()
             print("Generate new pending list...")
             result_list = []
-
             i = copy.copy(self.last_updated_clocks)
 
             while i <= self.cur_clock:
@@ -215,8 +203,7 @@ class WorkloadGen():
                 day = int(date[2])
                 time = os.path.splitext(info_v[3])[0].split(":")
                 hour = int(time[0])
-                min_= int(time[1])
-                video_datetime = datetime.datetime(year,month,day,hour,min_)
+                video_datetime = datetime.datetime(year,month,day,hour)
               
                 if video_datetime<=self.cur_clock:
                     json_body = [
@@ -233,8 +220,8 @@ class WorkloadGen():
                     self.DBclient.write_points(json_body)
 
             self.lock.release()
-            self.conn_send2IAE.send(True)
-            print("Send signal to IAE")
+            self.conn_send2SLE.send(True)
+            print("Send signal to SLE")
         except Exception as e:
             print(e)
 

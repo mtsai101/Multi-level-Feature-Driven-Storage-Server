@@ -1,5 +1,5 @@
 from influxdb import InfluxDBClient
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 
 import datetime
 import pandas as pd

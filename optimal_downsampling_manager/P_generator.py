@@ -40,7 +40,7 @@ week=[
     [0 for i in range(12)]
 ]
 
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 
 # this generator will conduct information amount estimation algorithm and generate S
 def generate_P(P_type='', clip_list=[]):

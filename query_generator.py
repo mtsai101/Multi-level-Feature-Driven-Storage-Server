@@ -24,7 +24,7 @@ for f in pre_frame_rate:
 
 pre_d_selected=np.array(pre_d_selected) 
 
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 
 max_info = dict()
 for a_type in ANALY_LIST:

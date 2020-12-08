@@ -23,7 +23,7 @@ class Dispatcher():
     @setInterval(1)
     def check_ready(self):
         try:
-            IAE_ready = self.conn_send2IAE 
+            SLE_ready = self.conn_send2SLE 
             AP_ready = self.conn_listen2AP
             DDM_ready = self.conn_send2DDM
             DP_ready = self.conn_listen2DP
@@ -38,7 +38,7 @@ class Dispatcher():
         self.ready.wait() #wait every port set up
         print("[INFO] Camera is running the task")
         try:
-            self.start_IAE_workload()
+            self.start_SLE_workload()
             self.start_DDM_workload()
             input("Start to dispatching workload...")
             print()
@@ -51,7 +51,7 @@ class Dispatcher():
         while True:
             time.sleep(1) # check every second
             now = datetime.now()
-            if ((now.hour-self.hour + 24) % 24)* 60 + (now.minute-self.minute) > data['dispatcher']['IAE_trigger_time'] * 60:
+            if ((now.hour-self.hour + 24) % 24)* 60 + (now.minute-self.minute) > data['dispatcher']['SLE_trigger_time'] * 60:
                 self.hour = now.hour
                 self.minute 
             else:
@@ -72,16 +72,16 @@ class Dispatcher():
                 print("Not detecting DDM, reconnecting...")
 
 
-    def open_IAE_sending_port(self):
+    def open_SLE_sending_port(self):
         while True:
             time.sleep(1)
             try:
-                if self.conn_send2IAE is None:
+                if self.conn_send2SLE is None:
                     address = ('localhost',5000)
-                    self.conn_send2IAE = Client(address)
-                    print("[INFO] Connected with IAE...")
+                    self.conn_send2SLE = Client(address)
+                    print("[INFO] Connected with SLE...")
             except Exception as e:
-                print("Not detecting IAE, reconnecting...")
+                print("Not detecting SLE, reconnecting...")
 
     ## this port is for simulation
     def open_AP_listening_port(self):
@@ -119,7 +119,7 @@ class Dispatcher():
                 self.conn_listen2DP = None  
                 print(e)
     
-    def start_IAE_workload(self):
+    def start_SLE_workload(self):
         try: 
             result = self.DBclient.query("SELECT * FROM raw_videos WHERE \"status\"=\"unprocessed\""])
             result_list = list(result.get_points(measurement="raw_videos"))
@@ -137,8 +137,8 @@ class Dispatcher():
                     ]
                 self.DBclient.write_points(json_body)
 
-            self.conn_send2IAE.send(True)
-            print("Send signal to IAE")
+            self.conn_send2SLE.send(True)
+            print("Send signal to SLE")
         except Exception as e:
             print(e)
 

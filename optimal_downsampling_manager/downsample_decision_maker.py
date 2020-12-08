@@ -19,7 +19,7 @@ class DownSampleDecisionMaker(object):
 
         self.ready = threading.Event()
         
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         self.VClistener = Listener(('localhost',3000))
 
 

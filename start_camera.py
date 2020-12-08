@@ -17,7 +17,7 @@ if __name__=='__main__':
         except Exception as e:
             print(e)
         try:
-            t2 = threading.Thread(target=workloadGen.open_IAE_sending_port,args=())
+            t2 = threading.Thread(target=workloadGen.open_SLE_sending_port,args=())
             t2.start()
         except Exception as e:
             print(e)

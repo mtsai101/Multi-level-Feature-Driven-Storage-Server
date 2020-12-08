@@ -35,7 +35,7 @@ clock = {
 
 def L_greedy():
     start=time.time()
-    DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+    DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
     
     result = DBclient.query("SELECT * FROM raw_11_"+str(clock['day']))
     result_list = list(result.get_points(measurement='raw_11_'+str(clock['day'])))

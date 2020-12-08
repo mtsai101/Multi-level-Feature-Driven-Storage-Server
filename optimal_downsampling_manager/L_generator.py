@@ -48,11 +48,11 @@ def generate_L(L_type='',clip_list=[],process_num=1):
                 The followings are for build the prediction models
             """
         
-            # for i in clip_list:
-            #     for a in ANALY_LIST:
-            #         decision = Decision(clip_name=i['name'],a_type=a,a_parameter=-1.0,fps=24.0,bitrate=1000.0)
-            #         L_list.append(decision)
-            decision = Decision(clip_name=clip_list[0]['name'],a_type='people_counting',a_parameter=100,fps=24.0,bitrate=1000.0)
+            for i in clip_list:
+                for a in ANALY_LIST:
+                    decision = Decision(clip_name=i['name'],a_type=a,a_parameter=-1.0,fps=24.0,bitrate=1000.0)
+                    L_list.append(decision)
+            # decision = Decision(clip_name=clip_list[0]['name'],a_type='people_counting',a_parameter=100,fps=24.0,bitrate=1000.0)
             L_list.append(decision)
             return L_list
 
