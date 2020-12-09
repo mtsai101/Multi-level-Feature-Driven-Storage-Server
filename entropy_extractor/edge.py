@@ -63,18 +63,23 @@ class EdgeHistogramComputer():
 
 
 edgeHistogramComputer = EdgeHistogramComputer(12,12)
-def get_edge_entropy(input_file, return_value):
+def get_edge_entropy(input_file, shot_list, return_value):
     vs = cv2.VideoCapture(input_file)
     total_entropy = 0
     frame_count = 0
+    shot_list_idx = 0
+
     while True:
         ret, frame = vs.read()
         if ret is False:
             break
-        
-        if frame_count%24==0:
+        if frame_count > shot_list[shot_list_idx][1]: 
+            shot_list_idx+=1
+
+        if frame_count%24==0 and shot_list[shot_list_idx][0] == 1:
             descriptor = edgeHistogramComputer.compute(frame)
             total_entropy += edge_entropy(descriptor)
+            break    
         frame_count += 1
         
     return_value.value = total_entropy

@@ -1,13 +1,18 @@
 import numpy as np
+import pandas as pd 
+import csv
+
 """
     function returns entropy of a signal
     signal must be a 1-D numpy array
 """
+
+
 def color_entropy(signal):
 
     bins = 10
     try:
-        hist = np.histogram(signal, bins=[i for i in range(0,256,bins)])
+        hist = np.histogram(signal.flatten(), bins=[i for i in range(0,256,bins)])
         propab=np.array([i/np.sum(hist[0]) for i in hist[0]])
         nonzero_p = np.nonzero(propab)
         ent=np.sum([p*np.log2(1.0/p) for p in propab[nonzero_p]])
@@ -23,7 +28,7 @@ def color_entropy(signal):
 def edge_entropy(signal):
     try:
         hist = signal.flatten()
-        
+        print(hist)
         propab=np.array([i/np.sum(hist) for i in hist])
         
         nonzero_p = np.nonzero(propab)

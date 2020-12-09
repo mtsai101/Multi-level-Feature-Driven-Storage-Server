@@ -69,7 +69,7 @@ class ShotDetector():
         while True:
             ret, frame = cap.read()
             if ret is False:
-                print(self.frame_num)
+                print("stop read video at",self.frame_num)
                 break
             self.process_frame(frame)
             
