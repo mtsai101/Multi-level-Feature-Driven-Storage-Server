@@ -40,7 +40,7 @@ def feature_procs(input_path, pending_tuple):
     # color_entropy = mp.Value('d', 0.0); 
     edge_entropy = mp.Value('d', 0.0); #conv_entropy = mp.Value('d', 0.0); temp_entropy = mp.Value('d', 0.0)
     # color_proc = mp.Process(target=get_color_entropy, args=(pending_tuple[1], shot_list, color_entropy,))
-    edge_proc = mp.Process(target=get_edge_entropy, args=(pending_tuple[1], shot_list, edge_entropy,))
+    edge_proc = mp.Process(target=get_edge_entropy, args=(input_path, , shot_list, edge_entropy,))
     # # conv_proc = mp.Process(target=get_conv_entropy, args=(input_path, conv_entropy,))
     # # temp_proc = mp.Process(target=get_temp_conv_entropy, args=(input_path, temp_entropy,))
     # color_proc.start(); 
@@ -68,38 +68,35 @@ def feature_procs(input_path, pending_tuple):
 
 if __name__=="__main__":
     feature_pending_list = [] # (input_path, back_path)
-    # month = 11; day=4
-    # month = str(month) if month>9 else "0"+str(month)
-    # day = str(day) if day>9 else "0"+str(day)
-    # input_dir = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/SmartPole/Pole1/2020-"+str(month)+"-"+str(day)+"_00-00-00"
-    # v_li = os.listdir(input_dir)
+    month = 11; day=4
+    month = str(month) if month>9 else "0"+str(month)
+    day = str(day) if day>9 else "0"+str(day)
+    input_dir = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/SmartPole/Pole1/2020-"+str(month)+"-"+str(day)+"_00-00-00"
+    v_li = os.listdir(input_dir)
 
-    # for v in v_li:
-    #     input_path = os.path.join(input_dir, v)
-    #     output_dir = os.path.join(input_dir,"background")
-    #     if not os.path.isfile(input_path):
-    #         continue
-    #     if not os.path.isdir(os.path.join(input_dir,"background")):
-    #         os.mkdir(os.path.join(input_dir,"background"))
+    for v in v_li:
+        input_path = os.path.join(input_dir, v)
+        output_dir = os.path.join(input_dir,"background")
+        if not os.path.isfile(input_path):
+            continue
+        if not os.path.isdir(os.path.join(input_dir,"background")):
+            os.mkdir(os.path.join(input_dir,"background"))
 
-    #     back_path = os.path.join(output_dir,"background_"+v)
-    #     feature_pending_list.append((input_path, back_path)) 
+        back_path = os.path.join(output_dir,"background_"+v)
+        feature_pending_list.append((input_path, back_path)) 
 
         
-    # if the video already be background subtraction, leave it be commented
-    # with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-    #     executor.map(background_subtraction, feature_pending_list)
+    if the video already be background subtraction, leave it be commented
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        executor.map(background_subtraction, feature_pending_list)
 
-    # print("Background Subtraction Completed")
+    print("Background Subtraction Completed")
 
 
 
-    input_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00/Pole1_2020-11-04_12-00-00.mp4"
-    back_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00/Pole1_2020-11-04_12-00-00.mp4"
-    feature_pending_list.append((input_path,back_path))
-    # with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-    #     executor.map(launch_shot_detector, feature_pending_list)
-    # print("Shot Detection Completed")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        executor.map(launch_shot_detector, feature_pending_list)
+    print("Shot Detection Completed")
         
     
     feature_procs(input_path, feature_pending_list[0])
