@@ -52,11 +52,12 @@ def generate_L(L_type='',clip_list=[], process_num=1):
             #     for a in ANALY_LIST:
             #         decision = Decision(clip_name=i['name'],a_type=a,a_parameter=-1.0,fps=24.0,bitrate=1000.0)
             #         L_list.append(decision)
-            DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
-            result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+clip_list[0]['name']+"\'")
-            shot_list =  ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
-            decision = Decision(clip_name=clip_list[0]['name'],a_type='people_counting',a_parameter=1,fps=24.0,bitrate=1000.0, shot_list=shot_list)
-            L_list.append(decision)
+            for clip in clip_list:
+                DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+                result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+clip['name']+"\'")
+                shot_list =  ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
+                decision = Decision(clip_name=clip['name'],a_type='people_counting',a_parameter=1,fps=24.0,bitrate=1000.0, shot_list=shot_list)
+                L_list.append(decision)
             return L_list
 
         elif L_type=='optimal':

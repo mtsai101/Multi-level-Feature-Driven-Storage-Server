@@ -187,7 +187,6 @@ class WorkloadGen():
             result = self.DBclient.query("select * from raw_11_5") 
             result_list += list(result.get_points(measurement="raw_11_5"))
 
-            
             for r in result_list:
                 v = r['name'].split("/")[-1]
                 info_v = v.split("_")
