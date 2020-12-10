@@ -8,7 +8,7 @@ from optimal_downsampling_manager.resource_predictor.table_estimator import get_
 
 class Transformer:
     def __init__(self):
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         self.parameter = 0
         self.ratio = 1
         self.execute_time = 0
@@ -25,8 +25,8 @@ class Transformer:
 
                 # file_path = self.rewrite_path(clip_name,self.fps,self.bitrate)
 
-                ## because ffmpeg can'y write inplace
-                tmp_name = os.path.splitext(P_decision.clip_name)[0]+"_tmp.mp4"
+                ## because ffmpeg can't write inplace, so we write to _converting
+                tmp_name = os.path.splitext(P_decision.clip_name)[0]+"_converting.mp4"
                 cmd = "mv %s %s"%(P_decision.clip_name, tmp_name)
                 os.system(cmd)
 
@@ -64,14 +64,14 @@ class Transformer:
                 "measurement": "videos_in_server",
                 "tags": {
                     "name": str(P_decision.clip_name),
-                    "fps":float(P_decision.fps),
-                    "bitrate":float(P_decision.bitrate),
-                    "host": "webcamPole1"
+                    
                 },
                 "time":old_row['time'],
                 "fields": {
-                    "a_parameter_0": float(P_decision.others[0]),
-                    "a_parameter_1": float(P_decision.others[1]),
+                    "fps":float(P_decision.fps),
+                    "bitrate":float(P_decision.bitrate),
+                    "a_para_illegal_parking": float(P_decision.others[0]),
+                    "a_para_people_counting": float(P_decision.others[1]),
                     "raw_size":float(P_decision.others[2])
                 }
             }

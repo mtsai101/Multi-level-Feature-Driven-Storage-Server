@@ -36,7 +36,7 @@ clock = {
 
 if __name__=='__main__':
     start=time.time()
-    DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+    DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
     
     # result = DBclient.query('SELECT * FROM raw_11_8 limit 360')
     # result_point = list(result.get_points(measurement='raw_11_8'))

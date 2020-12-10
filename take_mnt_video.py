@@ -37,7 +37,7 @@ def func(files):
 if __name__=='__main__':
     pool = Pool(4)
     ## move video from NAS to dataSet/video/raw
-    influx_client = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+    influx_client = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
     print("taking video...")
     files = os.listdir("/mnt/LiteOn_Videos/LiteOn_P1")
 

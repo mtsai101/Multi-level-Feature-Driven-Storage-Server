@@ -13,11 +13,11 @@ import os
 import yaml
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
-    data = yaml.load(yamlfile,Loader=yaml.FullLoader)['IAE']
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)['SLE']
 
 
 trigger_Interval = 6
-class InfoAmountEstimator(object):
+class SamplingLengthEstimator(object):
     def __init__(self):
         self.conn_listenVirtualCamera = None      
 
@@ -25,7 +25,7 @@ class InfoAmountEstimator(object):
         self.conn_send2Analytic = None
         self.ready = threading.Event()
     
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'video_edge')
+        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         self.VClistener = Listener(('localhost',5000))
     
 
@@ -72,7 +72,7 @@ class InfoAmountEstimator(object):
         self.ready.wait() #wait every port set up
         
         try:
-            print("[INFO] IAE is running the task")
+            print("[INFO] SLE is running the task")
             stopper = self.do()
 
         except Exception as e:    
@@ -98,9 +98,7 @@ class InfoAmountEstimator(object):
             clip_list = list(result.get_points(measurement='pending_video'))
             
             if len(clip_list) > 0:
-                t = threading.Thread(target=self.process_pending,args=(clip_list,))
-                t.start()
-                t.join()
+                self.process_pending(clip_list)
             else:
                 print("Can't find any pending videos")
 

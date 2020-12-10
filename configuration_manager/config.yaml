@@ -22,18 +22,19 @@ global:
 
 
 dispatcher:
-  IAE_trigger_time: 6 # hour 
+  SLE_trigger_time: 6 # hour 
 
 saver:
   pulsar_url: pulsar://140.114.79.84:6650 
   topic: persistent://video-streaming/raw-video/camera8
   sample_length: 100 # length of captured videos 
 
-IAE:
-  algo: FIFO # use which algo to in IAE to decide the sample length
+SLE:
+  algo: FIFO # use which algo to in SLE to decide the sample length
   delta_i: 300
 
-
+DDM:
+  algo: FIFO
 
 
 
@@ -43,8 +44,8 @@ IAE:
 
 # downsampling_manager:
 
-# downsampling:
-
+db_agent:
+  DDM_threshold: 5120
 
 
 

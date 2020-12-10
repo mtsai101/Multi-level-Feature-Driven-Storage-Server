@@ -85,8 +85,14 @@ if __name__=='__main__':
         rows = csv.reader(csvfile)
         for row in rows:
             row_s = row[0].split('/')
+<<<<<<< HEAD
             row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
             shot_list.append((row_path,row[1]))
+=======
+            if row_s[-2] == "2020-11-05_00-00-00":
+                row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
+                shot_list.append((row_path,row[1]))
+>>>>>>> ff6e78683c583cedab5cbe6ee576d1189ec0cf55
 
     sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
     for s in sorted_shot_list:

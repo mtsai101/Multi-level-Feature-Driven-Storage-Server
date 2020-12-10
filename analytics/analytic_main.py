@@ -58,7 +58,7 @@ class Analytic_Platform():
 
         while True:
             try:
-                print("[INFO] Listening from IAE")
+                print("[INFO] Listening from SLE")
                 conn = self.listener.accept()
                 print('connection accepted from', self.listener.last_accepted)
                 while True:
@@ -149,7 +149,7 @@ class Analytic_Platform():
     def hire_analyst(self, L_decision_list):
         try:
             for L_decision in L_decision_list:
-                self.analyst.set_video_clip(L_decision.clip_name)
+                self.analyst.set_video_clip(L_decision)
                 print('[INFO]',multiprocessing.current_process())
                 print('[INFO] a_type: {}, a_param: {}, fps: {}, bitrate:{}'
                             .format(L_decision.a_type, 
@@ -162,8 +162,9 @@ class Analytic_Platform():
                                 L_decision.a_type, # analy type
                                 L_decision.a_param,
                             )
-                self.analyst.analyze_save_clean(L_decision)
-                
+                self.analyst.analyze_save(L_decision)
+                self.analyst.analyze_save_per_frame(L_decision)
+                self.analyst.clean()                
         except Exception as e:
             print(e)
         
