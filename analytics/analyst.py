@@ -91,7 +91,7 @@ class Analyst(object):
 
             json_body = [
                 {
-                    "measurement": "analy_result",
+                    "measurement": "analy_complete_result_inshot",
                     "tags": {
                         "name": str(L_decision.clip_name),
                         "a_type": str(L_decision.a_type),
@@ -124,7 +124,7 @@ class Analyst(object):
             #save info_amount by type
             json_body.append(
                 {
-                    "measurement": "analy_result_raw_per_frame",
+                    "measurement": "analy_result_raw_per_frame_inshot",
                     "tags": {
                         "name": str(L_decision.clip_name),
                         "a_type": str(L_decision.a_type),

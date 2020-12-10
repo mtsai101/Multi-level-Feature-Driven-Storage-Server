@@ -24,7 +24,7 @@ class WorkloadGen():
         self.pending_list = list()
         self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         # the current time 
-        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 6, hour = 6)   
+        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 30, hour = 6)   
         #the last updated time
         self.last_updated_clocks = datetime.datetime(year = 2020, month = 11, day = 3, hour = 18)
 
@@ -177,14 +177,15 @@ class WorkloadGen():
             result_list = []
             i = copy.copy(self.last_updated_clocks)
             
+            ## if we ned time-series
             # while i <= self.cur_clock:
                 # result = self.DBclient.query("SELECT * FROM raw_"+ str(i.month) +"_"+str(i.day)) 
                 # print("SELECT * FROM raw_"+ str(i.month) +"_"+str(i.day))
                 # result_list += list(result.get_points(measurement="raw_"+ str(i.month) +"_"+str(i.day)))
                 # i += trigger_interval
-                
-            result = self.DBclient.query("select * from raw_11_4 where \"name\"=\'./storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00/Pole1_2020-11-04_15-00-00.mp4\'") 
-            result_list += list(result.get_points(measurement="raw_11_4"))
+            ## if we just want to specify some videos    
+            result = self.DBclient.query("select * from raw_11_5") 
+            result_list += list(result.get_points(measurement="raw_11_5"))
 
             
             for r in result_list:
