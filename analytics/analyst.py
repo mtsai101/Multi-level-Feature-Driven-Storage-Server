@@ -273,8 +273,7 @@ class Analyst(object):
                     cv2.putText(image, text, (10, darknet.network_height(self.netMain) - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     # check to see if we should write the frame to disk
                     self.writer.write(image)
-            if len(self.per_frame_target_result) > 10000:
-                break
+
             self.framesCounter += 1   
             
 

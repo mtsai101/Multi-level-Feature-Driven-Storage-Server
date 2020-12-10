@@ -83,9 +83,8 @@ if __name__=='__main__':
         rows = csv.reader(csvfile)
         for row in rows:
             row_s = row[0].split('/')
-            if row_s[-1]=="Pole1_2020-11-04_15-00-00.mp4":
-                row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
-                shot_list.append((row_path,row[1]))
+            row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
+            shot_list.append((row_path,row[1]))
 
     sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
     for s in sorted_shot_list:
