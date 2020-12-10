@@ -6,28 +6,29 @@ import ast
 DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 if __name__=='__main__':
     # init raw video database
-    # base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-05_00-00-00"
-    # video_li = os.listdir(base_dir)
-    # video_li = sorted(video_li, key= lambda x: x)
-    # for v in video_li:
-    #     v_path = os.path.join(base_dir,v)
-        
-    #     if os.path.isdir(v_path):
-    #         continue
-    #     json_body = [
-    #                         {
-    #                             "measurement": "raw_11_5",
-    #                             "tags": {
-    #                                 "name": str(v_path)
-                                    
-    #                             },
-    #                             "fields": {
-    #                                 "host": "webcamPole1"
+    # for i in range(4,10):
+    #     base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-0"+str(i)+"_00-00-00"
+    #     video_li = os.listdir(base_dir)
+    #     video_li = sorted(video_li, key= lambda x: x)
+    #     for v in video_li:
+    #         v_path = os.path.join(base_dir,v)
+            
+    #         if os.path.isdir(v_path):
+    #             continue
+    #         json_body = [
+    #                             {
+    #                                 "measurement": "raw_11_"+str(i),
+    #                                 "tags": {
+    #                                     "name": str(v_path)
+                                        
+    #                                 },
+    #                                 "fields": {
+    #                                     "host": "webcamPole1"
+    #                                 }
     #                             }
-    #                         }
-    #                     ]
-        
-    #     DBclient.write_points(json_body)
+    #                         ]
+            
+    #         DBclient.write_points(json_body)
 
     # init analy result
     # json_body = [
@@ -85,14 +86,9 @@ if __name__=='__main__':
         rows = csv.reader(csvfile)
         for row in rows:
             row_s = row[0].split('/')
-<<<<<<< HEAD
             row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
             shot_list.append((row_path,row[1]))
-=======
-            if row_s[-2] == "2020-11-05_00-00-00":
-                row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
-                shot_list.append((row_path,row[1]))
->>>>>>> ff6e78683c583cedab5cbe6ee576d1189ec0cf55
+
 
     sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
     for s in sorted_shot_list:
