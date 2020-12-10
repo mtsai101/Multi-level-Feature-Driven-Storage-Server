@@ -86,9 +86,10 @@ if __name__=="__main__":
     # print("Background Subtraction Completed")
 
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        executor.map(launch_shot_detector, feature_pending_list)
-    print("Shot Detection Completed")
+    with Pool(64) as p:
+            p.map(launch_shot_detector, feature_pending_list)
+        print("Shot Detection Completed")
+            
         
     
     # feature_procs(input_path, shotDetector.shot_list)
