@@ -1,13 +1,13 @@
 import os
 from multiprocessing import Process
-from optimal_downsampling_manager.info_amount_estimator import InfoAmountEstimator
+from optimal_downsampling_manager.sampling_length_estimator import SamplingLengthEstimator
 import threading 
 
 import time
 
 if __name__ == '__main__':
     print("[INFO] Initializing information amount estimator")
-    SLE =  InfoAmountEstimator()
+    SLE =  SamplingLengthEstimator()
 
     try:
         t2 = threading.Thread(target=SLE.open_VC_listening_port,args=())

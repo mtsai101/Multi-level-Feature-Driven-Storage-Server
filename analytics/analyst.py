@@ -39,6 +39,9 @@ class Analyst(object):
         self.writer = None
         self.clip_name = None
         self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+        self.shot_list = None
+        self.shot_list_index = 0
+        self.per_frame_target_result = []
         self.busy = 0 
         self.target_counter = 0
 
@@ -58,7 +61,7 @@ class Analyst(object):
     def set_sample_rate(self,sample_rate):
         self.current_sample_rate = sample_rate
 
-    def set_video_clip(self,clip_name):
+    def set_video_clip(self, L_decision):
 
         if self.vs is not None:
             self.vs.release()
@@ -67,18 +70,18 @@ class Analyst(object):
 
         print("[INFO] opening video file...")
 
-        self.vs = cv2.VideoCapture(clip_name)
+        self.vs = cv2.VideoCapture(L_decision.clip_name)
 
         self.read_fps = self.vs.get(cv2.CAP_PROP_FPS)
 
         self.total_frame_num = self.vs.get(cv2.CAP_PROP_FRAME_COUNT)
         self.img_width = int(self.vs.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.img_height = int(self.vs.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
+        self.shot_list = L_decision.shot_list
         self.processing_fps = 0.0
         self.writer = None
 
-    def analyze_save_clean(self,S_decision):
+    def analyze_save(self,L_decision):
         
         print("[INFO] Saving the analytic result")
 
@@ -86,22 +89,20 @@ class Analyst(object):
             record_time = time.asctime(time.localtime(time.time()))
             #save info_amount by type
 
-            day_idx, time_idx = get_context(S_decision.clip_name)
-
             json_body = [
                 {
                     "measurement": "analy_result",
                     "tags": {
-                        "name": str(S_decision.clip_name),
-                        "a_type": str(S_decision.a_type),
-                        "day_of_week":int(day_idx),
-                        "time_of_day":int(time_idx),
+                        "name": str(L_decision.clip_name),
+                        "a_type": str(L_decision.a_type),
+                        "day_of_week":int(L_decision.day_idx),
+                        "time_of_day":int(L_decision.time_idx),
                         "host": "webcamPole1"
                     },
                     "fields": {
                         "a_parameter": float(self.framesCounter),
-                        "fps": float(S_decision.fps),
-                        "bitrate": float(S_decision.bitrate),
+                        "fps": float(L_decision.fps),
+                        "bitrate": float(L_decision.bitrate),
                         "time_consumption": float(self.processing_time),
                         "target": int(self.target_counter)
                     }
@@ -110,18 +111,52 @@ class Analyst(object):
 
             self.DBclient.write_points(json_body)
 
-
         print("total processed {} frames".format(self.framesCounter))
         print("[INFO] Refresh the analtic type")
         
+        
+
+    def analyze_save_per_frame(self, L_decision):
+        
+        print("[INFO] Saving the analytic result every frame")
+        json_body=[]
+        for f in self.per_frame_target_result:
+            #save info_amount by type
+            json_body.append(
+                {
+                    "measurement": "analy_result_raw_per_frame",
+                    "tags": {
+                        "name": str(L_decision.clip_name),
+                        "a_type": str(L_decision.a_type),
+                        "day_of_week":int(L_decision.day_idx),
+                        "time_of_day":int(L_decision.time_idx),
+                        "host": "webcamPole1"
+                    },
+                    "fields": {
+                        "frame_idx": int(f[0]),
+                        "a_parameter": float(L_decision.a_param),
+                        "fps": float(L_decision.fps),
+                        "bitrate": float(L_decision.bitrate),
+                        "time_consumption": float(f[2]),
+                        "target": int(f[1])
+                    }
+                }
+            )
+            self.DBclient.write_points(json_body)
+        # self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=1000, protocol='json')
+        print("[INFO] Record each frame results in the shot")
+        
+
+    def clean(self):
         # reset the counter
         self.target_counter = 0
         self.framesCounter = 0
-        
-        
+        self.shot_list_index = 0
+        self.per_frame_target_result = [] ## record perframe result and aims to store back to database in one time
+
+
     def analyze(self, clip_name, type_, sample_length):
         #set writer
-
         if self.writer is None and self.write2disk is True:
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             self.writer = cv2.VideoWriter(
@@ -136,24 +171,29 @@ class Analyst(object):
         start = time.time()
         chunk = self.total_frame_num/sample_length
         step = 1 # 1 step for 1 chunk
-        framesCounter=-1
-        s=time.time()
-
-        
+        sample_buf = sample_length
         while True:
-            if self.framesCounter == sample_length: ## get enough number of frame
-                break
-            framesCounter += 1
+            s_p_frame = time.time()
 
+
+            
             success = self.vs.grab()
             if success == False:
                 break
 
-            if sample_length!=-1:
-                if framesCounter != int(chunk*step-chunk/2):
-                    continue
-                else:
-                    step+=1
+            if self.shot_list[self.shot_list_index][1] < self.framesCounter:
+                self.shot_list_index += 1
+
+            if not self.shot_list[self.shot_list_index][0]:
+                self.framesCounter+=1
+                continue
+
+            sample_buf -= 1
+            if sample_buf>0:
+                self.framesCounter += 1
+                continue
+            else:
+                sample_buf = sample_length
 
             ret, frame = self.vs.retrieve()
             
@@ -176,11 +216,15 @@ class Analyst(object):
             boxs_ = []
             classes_ = []
             if type_[:-1] == 'illegal_parking':
+                
+                pre_frame_target = self.target_counter
+
                 for obj in detections:
                     class_ = obj[0].decode("utf-8")
                     if class_=='car' or class_=='motorbike' or class_=='bus' or class_=='truck':
                         boxs_.append(list(obj[-1]))
                         classes_.append(class_)    
+                        
                 if len(detections) > 0:
                     # loop over the indexes we are keeping
                     for det in detections:
@@ -200,9 +244,11 @@ class Analyst(object):
                         illegal_park, image, cover_ratio  = ParkingDetector.detect(image, self.park_poly_list[int(type_[-1])], obj_park)
                         if illegal_park == True:
                             self.target_counter+=1
+                        # text = "region {}: {}".format(type_[-1], illegal_park)
+                        # cv2.putText(image, text, (10, darknet.network_height(self.netMain)-30), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2)
+                    
+                self.per_frame_target_result.append([self.framesCounter, self.target_counter - pre_frame_target, time.time()-s_p_frame])
 
-                        text = "region {}: {}".format(type_[-1], illegal_park)
-                        cv2.putText(image, text, (10, darknet.network_height(self.netMain)-30), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2)
                 # check to see if we should write the frame to disk
                 if self.write2disk:
                     self.writer.write(image)
@@ -215,7 +261,7 @@ class Analyst(object):
                         boxs_.append(list(obj[-1]))
 
                 self.target_counter += len(boxs_)
-                
+                self.per_frame_target_result.append([self.framesCounter,len(boxs_), time.time()-s_p_frame])
                 
                 
                 if self.write2disk:
@@ -227,15 +273,14 @@ class Analyst(object):
                     cv2.putText(image, text, (10, darknet.network_height(self.netMain) - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     # check to see if we should write the frame to disk
                     self.writer.write(image)
-
+            if len(self.per_frame_target_result) > 10000:
+                break
             self.framesCounter += 1   
             
 
-        p_t = time.time()-start
-        print(framesCounter)
-        print(p_t)
-        self.processing_fps = float(self.framesCounter)/p_t
-        self.processing_time = p_t
+        self.processing_time = time.time()-start
+        self.processing_fps = float(self.framesCounter)/self.processing_time
+        
         if self.writer is not None:
             self.writer.release()
         self.vs.release()

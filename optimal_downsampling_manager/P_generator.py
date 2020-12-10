@@ -45,39 +45,41 @@ DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 # this generator will conduct information amount estimation algorithm and generate S
 def generate_P(P_type='', clip_list=[]):
 
+    # clip_array = np.zeros((len(clip_list),4),dtype=np.uint8)
+    # clip_meta = np.zeros((len(clip_list),3),dtype=np.float32)
+    # for id_r, r in enumerate(clip_list):
+    #     clip_array[id_r][0], clip_array[id_r][1] = get_context(r['name'])
+    #     clip_array[id_r][2], clip_array[id_r][3] = pre_frame_rate.index(float(r['fps'])), pre_bitrate.index(float(r['bitrate']))
 
-    clip_array = np.zeros((len(clip_list),4),dtype=np.uint8)
-    clip_meta = np.zeros((len(clip_list),3),dtype=np.float32)
-    for id_r, r in enumerate(clip_list):
-        clip_array[id_r][0], clip_array[id_r][1] = get_context(r['name'])
-        clip_array[id_r][2], clip_array[id_r][3] = pre_frame_rate.index(float(r['fps'])), pre_bitrate.index(float(r['bitrate']))
+    #     clip_meta[id_r][0] = r['a_parameter_0']
+    #     clip_meta[id_r][1] = r['a_parameter_1']
 
-        clip_meta[id_r][0] = r['a_parameter_0']
-        clip_meta[id_r][1] = r['a_parameter_1']
-
-        clip_meta[id_r][2] = r['raw_size']
-
-
-
-
+    #     clip_meta[id_r][2] = r['raw_size']
 
     target_clip_num = clip_array.shape[0]
     target_deadline = delta_d
     target_space = int(V)
 
 
-    
-
-    if P_type=='FIFO': 
+    if P_type=='None':
         P_list=[]
-        space_experiment = Path("/home/min/ssd/space_experiment")
+        space_experiment = Path("./storage_server_volume/storage_video")
+        for c in clip_list:
+            d = Decision(clip_name=c['name'], fps=12.0, bitrate=500.0, others=[c['a_para_illegal_parking'],c['a_para_people_counting'],c['raw_size']])
+            P_list.append(d)
+
+        return P_list
+
+    elif P_type=='FIFO': 
+        P_list=[]
+        space_experiment = Path("./storage_server_volume/storage_video")
         sumsize = sum(f.stat().st_size for f in space_experiment.glob('**/*') if f.is_file())
         sumsize = sumsize/pow(2,20)
         clip_count=0
         while sumsize > V:
             victim_clip_size = os.path.getsize(clip_list[clip_count]['name'])/pow(2,20)
             sumsize -= victim_clip_size
-            d = Decision(clip_name=clip_list[clip_count]['name'], fps=-1.0, bitrate=-1.0, others=[clip_list[clip_count]['a_parameter_0'],clip_list[clip_count]['a_parameter_1'],clip_list[clip_count]['raw_size']])
+            d = Decision(clip_name=clip_list[clip_count]['name'], fps=-1.0, bitrate=-1.0, others=[clip_list[clip_count]['a_para_illegal_parking'],clip_list[clip_count]['a_para_people_counting'],clip_list[clip_count]['size']])
             P_list.append(d)
             clip_count+=1
         print("FIFO get out")

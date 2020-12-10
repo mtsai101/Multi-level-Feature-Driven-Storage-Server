@@ -1,29 +1,31 @@
 from influxdb import InfluxDBClient
-from optimal_downsampling_manager.resource_predictor.table_estimator import AnalyTimeTable, DownTimeTable, DownRatioTable, IATable
+# from optimal_downsampling_manager.resource_predictor.table_estimator import AnalyTimeTable, DownTimeTable, DownRatioTable, IATable
 import os
+import csv
+import ast
 DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 if __name__=='__main__':
     # init raw video database
-    base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00"
-    video_li = os.listdir(base_dir)
-    for v in video_li:
-        v_path = os.path.join(base_dir,v)
-        if os.path.isdir(v_path):
-            continue
-        json_body = [
-                            {
-                                "measurement": "raw_11_10",
-                                "tags": {
-                                    "name": str(v_path)
+    # base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00"
+    # video_li = os.listdir(base_dir)
+    # for v in video_li:
+    #     v_path = os.path.join(base_dir,v)
+    #     if os.path.isdir(v_path):
+    #         continue
+    #     json_body = [
+    #                         {
+    #                             "measurement": "raw_11_10",
+    #                             "tags": {
+    #                                 "name": str(v_path)
                                     
-                                },
-                                "fields": {
-                                    "host": "webcamPole1"
-                                }
-                            }
-                        ]
+    #                             },
+    #                             "fields": {
+    #                                 "host": "webcamPole1"
+    #                             }
+    #                         }
+    #                     ]
         
-        DBclient.write_points(json_body)
+    #     DBclient.write_points(json_body)
 
     # init analy result
     # json_body = [
@@ -75,3 +77,28 @@ if __name__=='__main__':
     # downRatioTable = DownRatioTable(True)
     # downTimeTable = DownTimeTable(True)
 
+    ## Save the shot list to databases
+    shot_list=[]
+    with open('./shot_list.csv', 'r') as csvfile:
+        rows = csv.reader(csvfile)
+        for row in rows:
+            row_s = row[0].split('/')
+            if row_s[-1]=="Pole1_2020-11-04_15-00-00.mp4":
+                row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
+                shot_list.append((row_path,row[1]))
+
+    sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
+    for s in sorted_shot_list:
+        # print(s[0])
+        json_body = [
+                    {
+                        "measurement": "shot_list",
+                        "tags": {
+                            "name": str(s[0])
+                        },
+                        "fields": {
+                            "list": str(s[1])
+                        }
+                    }
+                ]
+        DBclient.write_points(json_body)

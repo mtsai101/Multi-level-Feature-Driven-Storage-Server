@@ -14,22 +14,22 @@ class DownSample_Platform():
     def __init__(self):
         address = ('localhost', 7001)     
         self.listener = Listener(address)
-        self.conn_send2VC = None
+        self.conn_send2DBA = None
         
         ## this port is for simulator
 
     ## this port is for simulator
     def open_VC_sending_port(self):
-        print("[INFO] Listening from Virtual Camera")
+        print("[INFO] Listening from DB Agent")
         while True:
             time.sleep(3)
             try:
-                if self.conn_send2VC is None:
+                if self.conn_send2DBA is None:
                     address = ('localhost',6001)
-                    self.conn_send2VC = Client(address)
-                    print("Connected with Virtual Camera")
+                    self.conn_send2DBA = Client(address)
+                    print("Connected with DB Agent")
             except Exception as e:
-                print("No Virtual Camera, reconnecting...")
+                print("No DB Agent, reconnecting...")
                 
     def run(self):
         while True:
@@ -45,12 +45,12 @@ class DownSample_Platform():
                         total_downsample_time = self.hire_transformer(P_decision_list)
                         
                         # log downsampling time by timestamp...
-                        self.log_downsample_time(invoke_time,total_downsample_time)
+                        # self.log_downsample_time(invoke_time,total_downsample_time)
 
                         # tell VC can load the next batch of clips 
-                        if self.conn_send2VC is not None:
+                        if self.conn_send2DBA is not None:
                             print("Signal to Virtual Camera")
-                            self.conn_send2VC.send(True)
+                            self.conn_send2DBA.send(True)
                         
                     except Exception as e:
                         print(e)

@@ -11,17 +11,20 @@ import os
 import csv
 import copy
 
+
+
+
 trigger_interval = datetime.timedelta(hours=6) # hours
 f_c = 24*60
 pre_a_selected=[5.0, 10.0, 25.0, 50.0, 100.0]
-iATable = IATable(False)
+# iATable = IATable(False)
 class WorkloadGen():
     def __init__(self):
         self.mode = 1
         self.pending_list = list()
         self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         # the current time 
-        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 4, hour = 6)   
+        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 6, hour = 6)   
         #the last updated time
         self.last_updated_clocks = datetime.datetime(year = 2020, month = 11, day = 3, hour = 18)
 
@@ -43,29 +46,14 @@ class WorkloadGen():
         if self.mode == 2:
             self.DDM_size_threshold = 5*1024
             self.DDMflag = 0
-            self.DDMlist = []
-            self.DDMDir = Path("./storage_space")
+            self.DDM_pending_videos = []
+            self.storage_dir = Path("./storage_space")
 
             for i in range(9,14):
                 result = self.DBclient.query("SELECT * FROM raw_11_"+str(i))
-                self.DDMlist.extend(list(result.get_points(measurement="raw_11_"+str(i))))
+                self.DDM_pending_videos.extend(list(result.get_points(measurement="raw_11_"+str(i))))
 
-            try:
-                os.system("rm -rf ./ssd/space_experiment/raw*")
-                print("Clean the video")
-            except:
-                pass
-            try:
-                os.system("rm -rf ./prob2_"+self.algo_type)
-                print("Delete csv")
-            except:
-                pass
-            try:
-                self.DBclient.query("DROP MEASUREMENT videos_in_server")
-                print("Delete the videos_in_server table")
-            except:
-                pass
-
+            
 
 
     def open_DDM_sending_port(self):
@@ -175,7 +163,7 @@ class WorkloadGen():
                 print("Listening from DP & Waiting for generating the next batch of video...")
                 finish = self.conn_listen2DP.recv()
 
-                if self.DDMflag ==len(self.DDMlist)-1:
+                if self.DDMflag ==len(self.DDM_pending_videos)-1:
                     break
             
 
@@ -188,23 +176,27 @@ class WorkloadGen():
             print("Generate new pending list...")
             result_list = []
             i = copy.copy(self.last_updated_clocks)
+            
+            # while i <= self.cur_clock:
+                # result = self.DBclient.query("SELECT * FROM raw_"+ str(i.month) +"_"+str(i.day)) 
+                # print("SELECT * FROM raw_"+ str(i.month) +"_"+str(i.day))
+                # result_list += list(result.get_points(measurement="raw_"+ str(i.month) +"_"+str(i.day)))
+                # i += trigger_interval
+                
+            result = self.DBclient.query("select * from raw_11_4 where \"name\"=\'./storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00/Pole1_2020-11-04_15-00-00.mp4\'") 
+            result_list += list(result.get_points(measurement="raw_11_4"))
 
-            while i <= self.cur_clock:
-                result = self.DBclient.query("SELECT * FROM raw_"+ str(i.month) +"_"+str(i.day))            
-                result_list += list(result.get_points(measurement="raw_"+ str(i.month) +"_"+str(i.day)))
-                i += datetime.timedelta(days=1)
-
+            
             for r in result_list:
                 v = r['name'].split("/")[-1]
                 info_v = v.split("_")
-                date = info_v[2].split("-")
+                date = info_v[-2].split("-")
                 year = int(date[0])
                 month = int(date[1])
                 day = int(date[2])
-                time = os.path.splitext(info_v[3])[0].split(":")
+                time = os.path.splitext(info_v[-1])[0].split('-')
                 hour = int(time[0])
                 video_datetime = datetime.datetime(year,month,day,hour)
-              
                 if video_datetime<=self.cur_clock:
                     json_body = [
                         {
@@ -229,12 +221,11 @@ class WorkloadGen():
         try:
             self.lock.acquire()
             print("Generate new pending list...")
-            accumulate_size = 0
-            for r in self.DDMlist[self.DDMflag:]:
+            for r in self.DDM_pending_videos[self.DDMflag:]:
                 clip_date = int(r['name'].split("/")[-2].split("_")[-1])
                 clip_hour = int(r['name'].split("/")[-1].split("_")[-1].split(":")[0])
 
-                if self.DDMflag == len(self.DDMlist)-1:
+                if self.DDMflag == len(self.DDM_pending_videos)-1:
                     print("Already look all video!!!")
                     self.lock.release()
                     return
@@ -290,7 +281,7 @@ class WorkloadGen():
                 self.DBclient.write_points(json_body)
                 
 
-                sumsize = sum(f.stat().st_size for f in self.DDMDir.glob('**/*') if f.is_file())
+                sumsize = sum(f.stat().st_size for f in self.storage_dir.glob('**/*') if f.is_file())
                 sumsize = sumsize/pow(2,20)
                 if sumsize > self.DDM_size_threshold:
                     print(sumsize,self.DDM_size_threshold)
@@ -311,7 +302,7 @@ class WorkloadGen():
                 os.system("mkdir prob2_"+self.algo_type)
 
             ## log information, used space, clip num
-            cur_sumsize = sum(f.stat().st_size for f in self.DDMDir.glob('**/*') if f.is_file())
+            cur_sumsize = sum(f.stat().st_size for f in self.storage_dir.glob('**/*') if f.is_file())
             result = self.DBclient.query("SELECT * FROM videos_in_server")
             result_list = list(result.get_points(measurement='videos_in_server'))
 

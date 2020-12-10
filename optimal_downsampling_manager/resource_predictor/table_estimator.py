@@ -325,9 +325,10 @@ class IATable(Table):
 
 
 def get_context(clip_name):
-    day_idx = datetime.datetime.strptime(clip_name.split('/')[-1].split('_')[-2], '%Y-%m-%d')
+    video_name_list = clip_name.split('/')[-1].split('_')    
+    day_idx = datetime.datetime.strptime(video_name_list[-2], '%Y-%m-%d')
     day_idx = int(day_idx.weekday() >= 5) # day_idx==0 if weekday else day_idx==1
-    time_idx = int(int(clip_name.split('/')[-1].split('_')[-1].split(':')[0])/2)
+    time_idx = int(int(video_name_list[-1].split('-')[0]))
     return day_idx, time_idx
 
 def drop_measurement_if_exist(table_name):

@@ -8,7 +8,7 @@ if __name__=='__main__':
     print("[INFO] running virtual camera...")
     workloadGen = WorkloadGen()
 
-
+    
 
     if workloadGen.mode==1:
         try:

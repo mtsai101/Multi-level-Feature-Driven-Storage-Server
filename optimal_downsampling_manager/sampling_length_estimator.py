@@ -17,7 +17,7 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 
 
 trigger_Interval = 6
-class InfoAmountEstimator(object):
+class SamplingLengthEstimator(object):
     def __init__(self):
         self.conn_listenVirtualCamera = None      
 
@@ -98,9 +98,7 @@ class InfoAmountEstimator(object):
             clip_list = list(result.get_points(measurement='pending_video'))
             
             if len(clip_list) > 0:
-                t = threading.Thread(target=self.process_pending,args=(clip_list,))
-                t.start()
-                t.join()
+                self.process_pending(clip_list)
             else:
                 print("Can't find any pending videos")
 
