@@ -89,14 +89,18 @@ class ProcFrameCuda3:
         self.frame_device_b.upload(self.frame.array_b,self.stream)
 
         self.bgmog2.apply(self.frame_device, lr,self.stream, self.frame_device_mask)
-        cv2.cuda.bitwise_and(self.frame_device_r, self.frame_device_r, self.frame_device_fg_r, self.frame_device_mask, self.stream)
-        cv2.cuda.bitwise_and(self.frame_device_g, self.frame_device_g, self.frame_device_fg_g, self.frame_device_mask, self.stream)
-        cv2.cuda.bitwise_and(self.frame_device_b, self.frame_device_b, self.frame_device_fg_b, self.frame_device_mask, self.stream)
+        # cv2.cuda.bitwise_and(self.frame_device_r, self.frame_device_r, self.frame_device_fg_r, self.frame_device_mask, self.stream)
+        # cv2.cuda.bitwise_and(self.frame_device_g, self.frame_device_g, self.frame_device_fg_g, self.frame_device_mask, self.stream)
+        # cv2.cuda.bitwise_and(self.frame_device_b, self.frame_device_b, self.frame_device_fg_b, self.frame_device_mask, self.stream)
 
-        self.frame_device_fg_r.download(self.stream,self.fg_host.array_r)   
-        self.frame_device_fg_g.download(self.stream,self.fg_host.array_g)           
-        self.frame_device_fg_b.download(self.stream,self.fg_host.array_b)
+        # self.frame_device_fg_r.download(self.stream,self.fg_host.array_r)   
+        # self.frame_device_fg_g.download(self.stream,self.fg_host.array_g)           
+        # self.frame_device_fg_b.download(self.stream,self.fg_host.array_b)
         
+        self.frame_device_mask.download(self.stream,self.fg_host.array_r)   
+        self.frame_device_mask.download(self.stream,self.fg_host.array_g)           
+        self.frame_device_mask.download(self.stream,self.fg_host.array_b)
+
         self.frame_device_fg_r.setTo(0, self.stream)
         self.frame_device_fg_g.setTo(0, self.stream)
         self.frame_device_fg_b.setTo(0, self.stream)

@@ -100,7 +100,8 @@ class Analyst(object):
                         "host": "webcamPole1"
                     },
                     "fields": {
-                        "a_parameter": float(self.framesCounter),
+                        "a_parameter": float(L_decision.a_param),
+                        "total_frame_number":int(len(self.per_frame_target_result)),
                         "fps": float(L_decision.fps),
                         "bitrate": float(L_decision.bitrate),
                         "time_consumption": float(self.processing_time),
@@ -142,8 +143,7 @@ class Analyst(object):
                     }
                 }
             )
-            self.DBclient.write_points(json_body)
-        # self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=1000, protocol='json')
+        self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=1000, protocol='json')
         print("[INFO] Record each frame results in the shot")
         
 

@@ -24,7 +24,7 @@ class WorkloadGen():
         self.pending_list = list()
         self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         # the current time 
-        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 30, hour = 6)   
+        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 5, hour = 15)   
         #the last updated time
         self.last_updated_clocks = datetime.datetime(year = 2020, month = 11, day = 3, hour = 18)
 
@@ -197,7 +197,7 @@ class WorkloadGen():
                 time = os.path.splitext(info_v[-1])[0].split('-')
                 hour = int(time[0])
                 video_datetime = datetime.datetime(year,month,day,hour)
-                if video_datetime<=self.cur_clock:
+                if video_datetime>=self.cur_clock:
                     json_body = [
                         {
                             "measurement": "pending_video",
