@@ -184,7 +184,7 @@ class WorkloadGen():
                 # result_list += list(result.get_points(measurement="raw_"+ str(i.month) +"_"+str(i.day)))
                 # i += trigger_interval
             ## if we just want to specify some videos    
-            result = self.DBclient.query("select * from raw_11_5") 
+            result = self.DBclient.query("select * from raw_11_5 where \"name\"=\'./storage_server_volume/SmartPole/Pole1/2020-11-05_00-00-00/Pole1_2020-11-05_11-00-00.mp4\'") 
             result_list += list(result.get_points(measurement="raw_11_5"))
 
             for r in result_list:
@@ -197,7 +197,7 @@ class WorkloadGen():
                 time = os.path.splitext(info_v[-1])[0].split('-')
                 hour = int(time[0])
                 video_datetime = datetime.datetime(year,month,day,hour)
-                if video_datetime>=self.cur_clock:
+                if video_datetime<=self.cur_clock:
                     json_body = [
                         {
                             "measurement": "pending_video",
