@@ -6,7 +6,7 @@ import ffmpeg
 # from matplotlib import pyplot as plt
 import sys
 import cv2
-import logger
+
 import subprocess
 
 import tensorflow as tf

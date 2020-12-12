@@ -9,10 +9,14 @@ import pickle
 import time
 import os
 import csv
+import yaml
+
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 class DownSample_Platform():
     def __init__(self):
-        address = ('localhost', 7001)     
+        address = ('localhost', int(data['global']['DDM2DP']))     
         self.listener = Listener(address)
         self.conn_send2DBA = None
         
@@ -25,7 +29,7 @@ class DownSample_Platform():
             time.sleep(3)
             try:
                 if self.conn_send2DBA is None:
-                    address = ('localhost',6001)
+                    address = ('localhost',int(data['global']['DP2agent']))
                     self.conn_send2DBA = Client(address)
                     print("Connected with DB Agent")
             except Exception as e:

@@ -88,19 +88,18 @@ class Analyst(object):
         if(self.framesCounter>0):
             record_time = time.asctime(time.localtime(time.time()))
             #save info_amount by type
-
             json_body = [
                 {
-                    "measurement": "analy_complete_result_inshot",
+                    "measurement": "analy_complete_result_inshot_10_15",
                     "tags": {
                         "name": str(L_decision.clip_name),
                         "a_type": str(L_decision.a_type),
                         "day_of_week":int(L_decision.day_idx),
                         "time_of_day":int(L_decision.time_idx),
-                        "host": "webcamPole1"
                     },
                     "fields": {
-                        "a_parameter": float(self.framesCounter),
+                        "a_parameter": float(L_decision.a_param),
+                        "total_frame_number":int(len(self.per_frame_target_result)),
                         "fps": float(L_decision.fps),
                         "bitrate": float(L_decision.bitrate),
                         "time_consumption": float(self.processing_time),
@@ -108,32 +107,29 @@ class Analyst(object):
                     }
                 }
             ]
-
             self.DBclient.write_points(json_body)
-
+        
         print("total processed {} frames".format(self.framesCounter))
         print("[INFO] Refresh the analtic type")
         
         
 
     def analyze_save_per_frame(self, L_decision):
-        
         print("[INFO] Saving the analytic result every frame")
         json_body=[]
         for f in self.per_frame_target_result:
-            #save info_amount by type
+            ## save info_amount by type
             json_body.append(
                 {
-                    "measurement": "analy_result_raw_per_frame_inshot",
+                    "measurement": "analy_result_raw_per_frame_inshot_10_15",
                     "tags": {
                         "name": str(L_decision.clip_name),
                         "a_type": str(L_decision.a_type),
                         "day_of_week":int(L_decision.day_idx),
                         "time_of_day":int(L_decision.time_idx),
-                        "host": "webcamPole1"
+                        "frame_idx": int(f[0])
                     },
                     "fields": {
-                        "frame_idx": int(f[0]),
                         "a_parameter": float(L_decision.a_param),
                         "fps": float(L_decision.fps),
                         "bitrate": float(L_decision.bitrate),
@@ -142,8 +138,7 @@ class Analyst(object):
                     }
                 }
             )
-            self.DBclient.write_points(json_body)
-        # self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=1000, protocol='json')
+        self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
         print("[INFO] Record each frame results in the shot")
         
 
@@ -156,6 +151,7 @@ class Analyst(object):
 
 
     def analyze(self, clip_name, type_, sample_length):
+        print("Ananlying ", clip_name)
         #set writer
         if self.writer is None and self.write2disk is True:
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -174,9 +170,6 @@ class Analyst(object):
         sample_buf = sample_length
         while True:
             s_p_frame = time.time()
-
-
-            
             success = self.vs.grab()
             if success == False:
                 break
@@ -194,7 +187,6 @@ class Analyst(object):
                 continue
             else:
                 sample_buf = sample_length
-
             ret, frame = self.vs.retrieve()
             
             if type_ == 'None':
@@ -215,6 +207,7 @@ class Analyst(object):
 
             boxs_ = []
             classes_ = []
+
             if type_[:-1] == 'illegal_parking':
                 
                 pre_frame_target = self.target_counter
@@ -274,7 +267,9 @@ class Analyst(object):
                     # check to see if we should write the frame to disk
                     self.writer.write(image)
 
-            self.framesCounter += 1   
+       
+            self.framesCounter += 1 
+            
             
 
         self.processing_time = time.time()-start

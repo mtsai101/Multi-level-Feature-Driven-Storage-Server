@@ -14,6 +14,7 @@ import re
 import os
 import queue
 import sys
+import yaml
 
 configPath = "./analytics/darknet/cfg/yolov3.cfg"
 weightPath = "./analytics/darknet/yolov3.weights"
@@ -27,10 +28,12 @@ park_poly1 = [[42,168],[121 ,150],[140 ,391],[ 2, 397],[0, 280]]
 park_poly2 = [[118, 188],[292, 220],[293, 172],[156, 143]]
 park_poly3 = [[305, 178],[342 ,224],[411, 204],[385, 166]]
 
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 class Analytic_Platform():
     def __init__(self):
-        address = ('localhost', 7000)     
+        address = ('localhost', data['global']['SLE2AP'])     
         self.listener = Listener(address)
         self.conn_send2VC = None
         self.netMain = None
@@ -45,7 +48,7 @@ class Analytic_Platform():
             time.sleep(3)
             try:
                 if self.conn_send2VC is None:
-                    address = ('localhost',6000)
+                    address = ('localhost',int(data['global']['SLE2camera']))
                     self.conn_send2VC = Client(address)
                     print("Connected with Virtual Camera")
             except Exception as e:
@@ -164,7 +167,8 @@ class Analytic_Platform():
                             )
                 self.analyst.analyze_save(L_decision)
                 self.analyst.analyze_save_per_frame(L_decision)
-                self.analyst.clean()                
+                self.analyst.clean()     
+                                
         except Exception as e:
             print(e)
         

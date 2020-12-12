@@ -13,7 +13,7 @@ import math
 
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
-    data = yaml.load(yamlfile,Loader=yaml.FullLoader)['DDM']
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 class DownSampleDecisionMaker(object):
     def __init__(self):
@@ -23,7 +23,7 @@ class DownSampleDecisionMaker(object):
         self.ready = threading.Event()
         
         self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
-        self.DBAlistener = Listener(('localhost',3000))
+        self.DBAlistener = Listener(('localhost',int(data['global']['agent2DDM'])))
 
 
     def open_DBA_listening_port(self):
@@ -46,7 +46,7 @@ class DownSampleDecisionMaker(object):
             time.sleep(1)
             try:
                 if self.conn_send2DP is None:
-                    address = ('localhost',7001)
+                    address = ('localhost',int(data['global']['DDM2DP'])
                     self.conn_send2DP = Client(address)
                     print("Connected with Down Platform")
             except Exception as e:
@@ -100,7 +100,7 @@ class DownSampleDecisionMaker(object):
     def process_pending(self,clip_list):
         process_num = 1 # needs to less than total number of CPU cores
 
-        P_list = generate_P(P_type=data['algo'], clip_list=clip_list)
+        P_list = generate_P(P_type=data['DDM']['algo'], clip_list=clip_list)
         print("The length of P:",len(P_list))
         print("[INFO] sending P_decision")
 

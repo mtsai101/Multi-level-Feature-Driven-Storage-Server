@@ -10,13 +10,18 @@ import time
 import os
 import csv
 import copy
-
+import yaml
 
 
 
 trigger_interval = datetime.timedelta(hours=6) # hours
 f_c = 24*60
 pre_a_selected=[5.0, 10.0, 25.0, 50.0, 100.0]
+
+
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
 # iATable = IATable(False)
 class WorkloadGen():
     def __init__(self):
@@ -37,35 +42,9 @@ class WorkloadGen():
 
         self.conn_send2SLE = None
         self.conn_listen2AP = None
-        self.conn_send2DDM = None
-        self.conn_listen2DP = None
         self.ready = threading.Event()
         self.lock=threading.Lock()
         
-    
-        if self.mode == 2:
-            self.DDM_size_threshold = 5*1024
-            self.DDMflag = 0
-            self.DDM_pending_videos = []
-            self.storage_dir = Path("./storage_space")
-
-            for i in range(9,14):
-                result = self.DBclient.query("SELECT * FROM raw_11_"+str(i))
-                self.DDM_pending_videos.extend(list(result.get_points(measurement="raw_11_"+str(i))))
-
-            
-
-
-    def open_DDM_sending_port(self):
-        while True:
-            time.sleep(1)
-            try:
-                if self.conn_send2DDM is None:
-                    address = ('localhost',3000)
-                    self.conn_send2DDM = Client(address)
-                    print("[INFO] Connected with DDM...")
-            except Exception as e:
-                print("Not detecting DDM, reconnecting...")
 
 
     def open_SLE_sending_port(self):
@@ -73,7 +52,7 @@ class WorkloadGen():
             time.sleep(1)
             try:
                 if self.conn_send2SLE is None:
-                    address = ('localhost',5000)
+                    address = ('localhost',int(data['global']['camera2SLE']))
                     self.conn_send2SLE = Client(address)
                     print("[INFO] Connected with SLE...")
             except Exception as e:
@@ -81,7 +60,7 @@ class WorkloadGen():
 
     ## this port is for simulation
     def open_AP_listening_port(self):
-        address = ('localhost',6000)
+        address = ('localhost', int(data['global']['SLE2camera']))
         listener = Listener(address)
         while True:
             time.sleep(1)
@@ -97,23 +76,6 @@ class WorkloadGen():
                 self.conn_listen2AP = None  
                 print(e)
 
-    ## this port is for simulation
-    def open_DP_listening_port(self):
-        address = ('localhost',6001)
-        listener = Listener(address)
-        while True:
-            time.sleep(1)
-            try:
-                if self.conn_listen2DP is None:
-                    print("[INFO] Listening from Downsampling Platform")
-                    self.conn_listen2DP = listener.accept()
-                    print('connection accepted from', listener.last_accepted)
-
-            except Exception as e:
-                print("[INFO] Close listening port")
-                self.conn_listen2DP.close()  
-                self.conn_listen2DP = None  
-                print(e)
 
     @setInterval(1)
     def check_ready(self):
@@ -121,11 +83,6 @@ class WorkloadGen():
             SLE_ready = self.conn_send2SLE 
             AP_ready = self.conn_listen2AP
             if SLE_ready and AP_ready:
-                self.ready.set()
-        elif self.mode == 2:
-            DDM_ready = self.conn_send2DDM
-            DP_ready = self.conn_listen2DP
-            if DDM_ready and DP_ready:
                 self.ready.set()
         else:
             print("Error camera mode!")
@@ -184,8 +141,10 @@ class WorkloadGen():
                 # result_list += list(result.get_points(measurement="raw_"+ str(i.month) +"_"+str(i.day)))
                 # i += trigger_interval
             ## if we just want to specify some videos    
-            result = self.DBclient.query("select * from raw_11_5") 
-            result_list += list(result.get_points(measurement="raw_11_5"))
+            
+            for i in range(10,16):
+                result = self.DBclient.query("select * from raw_11_"+str(i)) 
+                result_list += list(result.get_points(measurement="raw_11_"+str(i)))
 
             for r in result_list:
                 v = r['name'].split("/")[-1]
@@ -217,82 +176,7 @@ class WorkloadGen():
         except Exception as e:
             print(e)
 
-    def DDM_gen_workload(self):
-        try:
-            self.lock.acquire()
-            print("Generate new pending list...")
-            for r in self.DDM_pending_videos[self.DDMflag:]:
-                clip_date = int(r['name'].split("/")[-2].split("_")[-1])
-                clip_hour = int(r['name'].split("/")[-1].split("_")[-1].split(":")[0])
-
-                if self.DDMflag == len(self.DDM_pending_videos)-1:
-                    print("Already look all video!!!")
-                    self.lock.release()
-                    return
-                else:
-                    self.DDMflag +=1
-                
-
-                # log every hour
-                # self.log_database(clip_date, clip_hour)
-
-
-                dir_clip = r['name'].split("/")
-                new_path = os.path.join("./ssd/space_experiment",dir_clip[-2])
-                if not os.path.isdir(new_path):
-                    os.mkdir(new_path) 
-                clip_name = os.path.join(new_path,dir_clip[-1])
-                cmd = "cp %s %s"%(r['name'], clip_name)
-                print(cmd)
-                os.system(cmd)
-                result = self.DBclient.query("SELECT * FROM analy_result_greedy WHERE \"name\"=\'"+r['name']+"\'")
-                result_list = list(result.get_points(measurement="analy_result_greedy"))
-
-                a_parameter_ill = 5.0
-                a_parameter_peo = 5.0
-
-                for r in result_list:
-                    if r['a_type']=='illegal_parking0':
-                        a_parameter_ill = r['a_parameter']
-                    elif r['a_type']=='people_counting':
-                        a_parameter_peo = r['a_parameter']
-
-                    
-
-                raw_size = os.path.getsize(r['name']) / pow(2,20)
-                if raw_size<=0:
-                    raw_size = 6
-                json_body = [
-                    {
-                        "measurement": "videos_in_server",
-                        "tags": {
-                            "name": str(clip_name),
-                            "fps":float(24.0),
-                            "bitrate":float(1000.0),
-                            "host": "webcamPole1"
-                        },
-                        "fields": {
-                            "a_parameter_0": float(a_parameter_ill),
-                            "a_parameter_1": float(a_parameter_peo),
-                            "raw_size":float(raw_size)
-                        }
-                    }
-                ]
-                self.DBclient.write_points(json_body)
-                
-
-                sumsize = sum(f.stat().st_size for f in self.storage_dir.glob('**/*') if f.is_file())
-                sumsize = sumsize/pow(2,20)
-                if sumsize > self.DDM_size_threshold:
-                    print(sumsize,self.DDM_size_threshold)
-                    print("Out of size at %s, trigger prob2..."%(r['name']))
-                    break
-            
-            self.lock.release()
-            self.conn_send2DDM.send([clip_date,clip_hour])
-            print("Send signal to DDM")
-        except Exception as e:
-            print(e)
+    
 
     def log_database(self,clip_date,clip_hour):
         
