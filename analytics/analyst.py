@@ -138,7 +138,9 @@ class Analyst(object):
                     }
                 }
             )
+
         self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+
         print("[INFO] Record each frame results in the shot")
         
 

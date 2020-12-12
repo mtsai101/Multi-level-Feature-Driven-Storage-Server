@@ -4,7 +4,7 @@ from influxdb import InfluxDBClient
 DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 import time
 class ShotDetector():
-    def __init__(self, threshold=12, min_percent=0.999, min_scene_len=48, block_size=8):
+    def __init__(self, threshold=3, min_percent=0.9999, min_scene_len=48, block_size=8):
         """Initializes threshold-based scene detector object."""
         self.threshold = int(threshold)
         self.min_percent = min_percent
@@ -72,7 +72,7 @@ class ShotDetector():
                 print("stop read video at",self.frame_num)
                 break
             self.process_frame(frame)
-            
+
         self.post_process()
 
 
@@ -100,9 +100,8 @@ if __name__=="__main__":
     # del shotDetector
     s = time.time()
     shotDetector = ShotDetector()
-    input_path="/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
+    input_path="/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_16:07:42.mp4"
     shotDetector.detect(input_path)
-    shotDetector.save_results("/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_15:00:36.mp4")
-    print(shotDetector.shot_list, time.time()-s)
+    shotDetector.save_results("/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_16:07:42.mp4")
+    # print(shotDetector.shot_list, time.time()-s)
     del shotDetector
-    
