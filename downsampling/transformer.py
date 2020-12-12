@@ -12,8 +12,6 @@ class Transformer:
         self.parameter = 0
         self.ratio = 1
         self.execute_time = 0
-        self.fps = 0 
-        self.bitrate = 0
 
         
     def transform(self,P_decision):
@@ -25,7 +23,7 @@ class Transformer:
 
                 # file_path = self.rewrite_path(clip_name,self.fps,self.bitrate)
 
-                ## because ffmpeg can't write inplace, so we write to _converting
+                ## because ffmpeg can't do inplace writing , so we write to _converting
                 tmp_name = os.path.splitext(P_decision.clip_name)[0]+"_converting.mp4"
                 cmd = "mv %s %s"%(P_decision.clip_name, tmp_name)
                 os.system(cmd)
@@ -38,10 +36,14 @@ class Transformer:
                 cmd = "rm %s"%(tmp_name)
                 os.system(cmd)
                 
+                if os.path.isfile(clip_name):
+                    size = os.path.getsize(clip_name)
+                    self.ratio = os.path.getsize(file_path) / size
+                else:
+                    print("Not Found Clip:", clip_name)
+                    self.ratio = 0
 
-                self.save(P_decision)
-                # size = os.path.getsize(clip_name)
-                # self.ratio = os.path.getsize(file_path) / size
+                self.update_stored_video(P_decision)
 
             elif P_decision.fps==-1 and P_decision.bitrate==-1: ## remove the clip from the server
                 cmd = "rm %s"%(P_decision.clip_name)
@@ -54,10 +56,10 @@ class Transformer:
 
         
 
-    def save(self,P_decision):
+
+    def update_stored_video(self,P_decision):
         old_row = self.DBclient.query("SELECT * FROM videos_in_server WHERE \"name\"=\'"+P_decision.clip_name+"\'")
         old_row = list(old_row.get_points(measurement="videos_in_server"))[0]
-        self.DBclient.query("DELETE FROM videos_in_server WHERE \"name\"=\'"+P_decision.clip_name+"\'")
         
         json_body = [
             {
@@ -70,6 +72,8 @@ class Transformer:
                 "fields": {
                     "fps":float(P_decision.fps),
                     "bitrate":float(P_decision.bitrate),
+                    "prev_fps":float(P_decision.prev_fps),
+                    "prev_bitrate":float(P_decision.prev_bitrate),
                     "a_para_illegal_parking": float(P_decision.others[0]),
                     "a_para_people_counting": float(P_decision.others[1]),
                     "raw_size":float(P_decision.others[2])
@@ -79,8 +83,6 @@ class Transformer:
         
         self.DBclient.write_points(json_body)
 
-        self.fps = 0
-        self.bitrate = 0
         self.ratio = 1
 
     # def rewrite_path(self,clip_name,fps,bitrate):

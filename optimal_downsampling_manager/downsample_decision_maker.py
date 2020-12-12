@@ -1,7 +1,6 @@
 from multiprocessing.connection import Client,Listener
 from .decision_type import Decision
 from .P_generator import generate_P
-from .divide_week import weeklist
 from influxdb import InfluxDBClient
 from util.SetInterval import setInterval
 import numpy as np
@@ -9,7 +8,7 @@ import threading
 import random
 import time
 import math
-
+import yaml
 
 
 with open('configuration_manager/config.yaml','r') as yamlfile:

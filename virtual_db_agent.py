@@ -10,29 +10,27 @@ import time
 import os
 import csv
 import copy
-
+import yaml
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)['db_agent']
 
 class DB_agent(object):
-
     def __init__(self):
-    self.mode = 1
-    self.pending_list = list()
-    self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+        self.pending_list = list()
+        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 
 
-    self.conn_send2DDM = None
-    self.conn_listen2DP = None
-    self.ready = threading.Event()
-    self.lock=threading.Lock()
-    
+        self.conn_send2DDM = None
+        self.conn_listen2DP = None
+        self.ready = threading.Event()
+        self.lock=threading.Lock()
+        
 
-    self.DDM_size_threshold = 5*1024
-    self.DDMflag = 0
-    self.DDM_pending_videos = []
-    self.storage_dir = "./storage_server_volume"
+        self.DDM_size_threshold = 5*1024
+        self.DDMflag = 0
+        self.DDM_pending_videos = []
+        self.storage_dir = "./storage_server_volume"
 
 
     def open_DDM_sending_port(self):
@@ -78,7 +76,7 @@ class DB_agent(object):
     #set port, run monitor    
     def run(self):
         self.ready.wait() #wait every port set up
-        print("[INFO] Camera is running the task")
+        print("[INFO] DBA is running the task")
         try:
             self.do()
             input("Press any key to stop...")
@@ -103,76 +101,101 @@ class DB_agent(object):
 
 
     def DDM_gen_workload(self):
+        self.move_video_to_server()
         try:
             self.lock.acquire()
             print("Generate new pending list...")
             ## Get the pending video for downsampling from databases 'stored_month_day'
             result = self.DBclient.query("SELECT * FROM videos_in_server")
             self.DDM_pending_videos.extend(list(result.get_points(measurement="videos_in_server")))
-                
-
-            # for r in self.DDM_pending_videos[self.DDMflag:]:
-                # clip_date = int(r['name'].split("/")[-2].split("_")[-1])
-
-                # if self.DDMflag == len(self.DDM_pending_videos)-1:
-                #     print("Already look all video!!!")
-                #     self.lock.release()
-                #     return
-                # else:
-                #     self.DDMflag +=1
-                
-
-                # # log every hour
-                # # self.log_database(clip_date, clip_hour)
-
-
-                # ## if the video is new coming, mkdir and mv it to stored folder
-                # clip_path = r['name'].split("/")
-                # new_path = os.path.join(self.storage_dir,clip_path[-2])
-                # if not os.path.isdir(new_path):
-                #     os.mkdir(new_path) 
-                # stored_clip_name = os.path.join(new_path,clip_path[-1])
-                # if not os.path.isfile(stored_clip_name):
-                #     cmd = "cp %s %s"%(r['name'], stored_clip_name)
-                #     os.system(cmd)
-                
-
-                # raw_size = os.path.getsize(stored_clip_name) / pow(2,20)
-                
-                # ???? what is this ??? maybe to ensure the least video size
-                # if raw_size<=0:
-                #     raw_size = 6
-
-                ## Save and log the new videos in the database
-                # json_body = [
-                #     {
-                #         "measurement": "",
-                #         "tags": {
-                #             "name": str(clip_name),
-                #             "fps":float(24.0),
-                #             "bitrate":float(1000.0),
-                #             "host": "webcamPole1"
-                #         },
-                #         "fields": {
-                #             "a_parameter_0": float(r['a_para_illegal_parking']),
-                #             "a_parameter_1": float(r['a_para_people_counting']),
-                #             "raw_size":float(raw_size)
-                #         }
-                #     }
-                # ]
-                # self.DBclient.write_points(json_body)
-                
-
-                # sumsize = sum(f.stat().st_size for f in Path(self.storage_dir).glob('**/*') if f.is_file())
-                # sumsize = sumsize/pow(2,20)
-                # if sumsize > self.DDM_size_threshold:
-                #     print(sumsize,self.DDM_size_threshold)
-                #     print("Out of size at %s, trigger prob2..."%(r['name']))
-                #     break
-
-                
             self.lock.release()
-            self.conn_send2DDM.send(self.DDM_pending_videos[self.DDMflag:])
+            # self.conn_send2DDM.send(self.DDM_pending_videos[self.DDMflag:])
             print("Send signal to DDM")
         except Exception as e:
             print(e)
+
+
+    def move_video_to_server(self):
+        json_body = []
+        for i in range(4,5):
+            result = self.DBclient.query("SELECT * FROM raw_11_"+str(i))
+            result_list = list(result.get_points(measurement="raw_11_"+str(i)))
+            for r in result_list:
+                raw_size = os.path.getsize(r['name']) / pow(2,20)
+                json_body.append({
+                    "measurement": "videos_in_server",
+                    "tags": {
+                        "name": str(r['name']),
+                        "host": "webcamPole1"
+                    },
+                    "fields": {
+                        "fps":float(24.0),
+                        "bitrate":float(1000.0),
+                        "prev_fps":float(24.0),
+                        "prev_bitrate":float(1000.0),
+                        "a_para_illegal_parking": float(1),
+                        "a_para_people_counting": float(1),
+                        "raw_size":float(raw_size)
+                    }
+                }
+            )
+        self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=1000, protocol='json')
+
+        # for r in self.DDM_pending_videos[self.DDMflag:]:
+            # clip_date = int(r['name'].split("/")[-2].split("_")[-1])
+
+            # if self.DDMflag == len(self.DDM_pending_videos)-1:
+            #     print("Already look all video!!!")
+            #     self.lock.release()
+            #     return
+            # else:
+            #     self.DDMflag +=1
+            
+
+            # # log every hour
+            # # self.log_database(clip_date, clip_hour)
+
+
+            # ## if the video is new coming, mkdir and mv it to stored folder
+            # clip_path = r['name'].split("/")
+            # new_path = os.path.join(self.storage_dir,clip_path[-2])
+            # if not os.path.isdir(new_path):
+            #     os.mkdir(new_path) 
+            # stored_clip_name = os.path.join(new_path,clip_path[-1])
+            # if not os.path.isfile(stored_clip_name):
+            #     cmd = "cp %s %s"%(r['name'], stored_clip_name)
+            #     os.system(cmd)
+            
+
+            # raw_size = os.path.getsize(stored_clip_name) / pow(2,20)
+            
+            # ???? what is this ??? maybe to ensure the least video size
+            # if raw_size<=0:
+            #     raw_size = 6
+
+            ## Save and log the new videos in the database
+            # json_body = [
+            #     {
+            #         "measurement": "",
+            #         "tags": {
+            #             "name": str(clip_name),
+            #             "fps":float(24.0),
+            #             "bitrate":float(1000.0),
+            #             "host": "webcamPole1"
+            #         },
+            #         "fields": {
+            #             "a_parameter_0": float(r['a_para_illegal_parking']),
+            #             "a_parameter_1": float(r['a_para_people_counting']),
+            #             "raw_size":float(raw_size)
+            #         }
+            #     }
+            # ]
+            # self.DBclient.write_points(json_body)
+            
+
+            # sumsize = sum(f.stat().st_size for f in Path(self.storage_dir).glob('**/*') if f.is_file())
+            # sumsize = sumsize/pow(2,20)
+            # if sumsize > self.DDM_size_threshold:
+            #     print(sumsize,self.DDM_size_threshold)
+            #     print("Out of size at %s, trigger prob2..."%(r['name']))
+            #     break
