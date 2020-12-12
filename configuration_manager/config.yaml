@@ -15,11 +15,46 @@ global:
     - 500.0 
     - 100.0
     - 10.0
-  ipcamlist:
-    - 8:
-      - illegal_patking
-      - people_counting
+  
+  # camera2SLE: 5000
+  # SLE2AP: 7000
+  # SLE2camera: 6000
 
+  # agent2DDM: 5001
+  # DDM2DP: 7001
+  # DP2agent: 6001
+
+  # camera2SLE: 5002
+  # SLE2AP: 7002
+  # SLE2camera: 6002
+
+  # agent2DDM: 5003
+  # DDM2DP: 7003
+  # DP2agent: 6003
+
+  # camera2SLE: 5004
+  # SLE2AP: 7004
+  # SLE2camera: 6004
+
+  # agent2DDM: 5005
+  # DDM2DP: 7005
+  # DP2agent: 6005
+
+  camera2SLE: 5006
+  SLE2AP: 7006
+  SLE2camera: 6006
+
+  # agent2DDM: 5007
+  # DDM2DP: 7007
+  # DP2agent: 6007
+
+  # camera2SLE: 5008
+  # SLE2AP: 7008
+  # SLE2camera: 6008
+
+  # agent2DDM: 5009
+  # DDM2DP: 7009
+  # DP2agent: 6009
 
 dispatcher:
   SLE_trigger_time: 6 # hour 
@@ -29,16 +64,13 @@ saver:
   topic: persistent://video-streaming/raw-video/camera8
   sample_length: 100 # length of captured videos 
 
+
 SLE:
   algo: FIFO # use which algo to in SLE to decide the sample length
   delta_i: 300
 
 DDM:
   algo: FIFO
-
-
-
-
 
 # analytics:
 

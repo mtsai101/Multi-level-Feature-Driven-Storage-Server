@@ -13,7 +13,7 @@ import os
 import yaml
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
-    data = yaml.load(yamlfile,Loader=yaml.FullLoader)['SLE']
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 
 trigger_Interval = 6
@@ -26,7 +26,7 @@ class SamplingLengthEstimator(object):
         self.ready = threading.Event()
     
         self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
-        self.VClistener = Listener(('localhost',5000))
+        self.VClistener = Listener(('localhost',int(data['global']['camera2SLE'])))
     
 
     def open_VC_listening_port(self):
@@ -51,7 +51,7 @@ class SamplingLengthEstimator(object):
             time.sleep(3)
             try:
                 if self.conn_send2Analytic is None:
-                    address = ('localhost',7000)
+                    address = ('localhost',int(data['global']['SLE2AP']))
                     self.conn_send2Analytic = Client(address)
                     print("Connected with Analy Platform")
             except Exception as e:
@@ -96,7 +96,6 @@ class SamplingLengthEstimator(object):
             print("Generating L from workload generator")
             result = self.DBclient.query('SELECT * from pending_video')
             clip_list = list(result.get_points(measurement='pending_video'))
-            
             if len(clip_list) > 0:
                 self.process_pending(clip_list)
             else:
@@ -107,8 +106,8 @@ class SamplingLengthEstimator(object):
     def process_pending(self,clip_list):
         process_num = 1 # needs to less than total number of CPU cores
 
-        L_list = generate_L(L_type=data['algo'], clip_list=clip_list, process_num=process_num)
-        print(len(L_list))
+        L_list = generate_L(L_type=data['SLE']['algo'], clip_list=clip_list, process_num=process_num)
+        print("L list length: ",len(L_list))
         print("[INFO] sending L_decision")
         
         # send clip_list to Analytics

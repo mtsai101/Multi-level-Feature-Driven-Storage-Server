@@ -127,11 +127,11 @@ class ProcFrameCuda3:
 
 
 
-if __name__=="__main__":
+# if __name__=="__main__":
 
-    input_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_15:00:36.mp4"
-    output_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
-    proc_frame_cuda3 = ProcFrameCuda3()
-    ProcVid1(proc_frame_cuda3, input_path, output_path)
+#     input_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_15:00:36.mp4"
+#     output_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
+#     proc_frame_cuda3 = ProcFrameCuda3()
+#     ProcVid1(proc_frame_cuda3, input_path, output_path)
     # print(f'GPU 3 (overlap host and device - attempt 1): {n_frames} frames, {gpu_time_3:.2f} ms/frame')
 

@@ -1,33 +1,36 @@
 from influxdb import InfluxDBClient
+DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+
 # from optimal_downsampling_manager.resource_predictor.table_estimator import AnalyTimeTable, DownTimeTable, DownRatioTable, IATable
 import os
 import csv
 import ast
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 if __name__=='__main__':
+    
     # init raw video database
-    # base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-05_00-00-00"
-    # video_li = os.listdir(base_dir)
-    # video_li = sorted(video_li, key= lambda x: x)
-    # for v in video_li:
-    #     v_path = os.path.join(base_dir,v)
-        
-    #     if os.path.isdir(v_path):
-    #         continue
-    #     json_body = [
-    #                         {
-    #                             "measurement": "raw_11_5",
-    #                             "tags": {
-    #                                 "name": str(v_path)
-                                    
-    #                             },
-    #                             "fields": {
-    #                                 "host": "webcamPole1"
+    # for i in range(10,16):
+    #     base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
+    #     video_li = os.listdir(base_dir)
+    #     video_li = sorted(video_li, key= lambda x: x)
+    #     for v in video_li:
+    #         v_path = os.path.join(base_dir,v)
+            
+    #         if os.path.isdir(v_path):
+    #             continue
+    #         json_body = [
+    #                             {
+    #                                 "measurement": "raw_11_"+str(i),
+    #                                 "tags": {
+    #                                     "name": str(v_path)
+                                        
+    #                                 },
+    #                                 "fields": {
+    #                                     "host": "webcamPole1"
+    #                                 }
     #                             }
-    #                         }
-    #                     ]
-        
-    #     DBclient.write_points(json_body)
+    #                         ]
+            
+    #         DBclient.write_points(json_body)
 
     # init analy result
     # json_body = [
@@ -79,28 +82,70 @@ if __name__=='__main__':
     # downRatioTable = DownRatioTable(True)
     # downTimeTable = DownTimeTable(True)
 
-    # Save the shot list to databases
-    shot_list=[]
-    with open('./shot_list.csv', 'r') as csvfile:
-        rows = csv.reader(csvfile)
-        for row in rows:
-            row_s = row[0].split('/')
-            if row_s[-2] == "2020-11-05_00-00-00":
-                row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
-                shot_list.append((row_path,row[1]))
 
-    sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
-    for s in sorted_shot_list:
-        # print(s[0])
-        json_body = [
-                    {
-                        "measurement": "shot_list",
-                        "tags": {
-                            "name": str(s[0])
-                        },
-                        "fields": {
-                            "list": str(s[1])
-                        }
-                    }
-                ]
-        DBclient.write_points(json_body)
+    ## mv day-00 to correct
+    # base_dir = "/mnt/nas/fog/SmartPoleVideo/SaveEveryHour/shot_detection"
+    # li = os.listdir(base_dir)
+
+    # for l in li:
+    #     video_dir = os.path.join(base_dir, l)
+    #     video_li = os.listdir(video_dir)
+
+    #     day = int(l.split('_')[0].split('-')[-1])
+    #     for v in video_li:
+    #         video_path = os.path.join(video_dir,v)
+    #         if os.path.isfile(video_path):
+    #             if day != int(v.split('_')[1].split('-')[-1]):
+    #                 cmd = "mv " + video_path +" .."  
+    #                 # os.system(cmd)
+    #                 print(cmd)
+    #                 back_video = "background_"+v
+    #                 cmd = "mv " + os.path.join(video_dir,"background", back_video) + " ../.."
+    #                 print(cmd)
+    #                 # os.system(cmd)
+
+    # Save the shot list to databases
+    # shot_list=[]
+    # with open('./shot_list_4_15.csv', 'r') as csvfile:
+    #     rows = csv.reader(csvfile)
+    #     for row in rows:
+    #         row_s = row[0].split('/')
+    #         row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
+    #         shot_list.append((row_path,row[1]))
+
+
+    # sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
+    # for s in sorted_shot_list:
+    #     # print(s[0])
+    #     json_body = [
+    #                 {
+    #                     "measurement": "shot_list",
+    #                     "tags": {
+    #                         "name": str(s[0])
+    #                     },
+    #                     "fields": {
+    #                         "list": str(s[1])
+    #                     }
+    #                 }
+    #             ]
+    #     DBclient.write_points(json_body)
+
+    json_body=[]
+    for f in range(1,685):
+        #save info_amount by type
+        json_body.append(
+            {
+                "measurement": "test",
+                "tags": {
+                    "name": str(f)+"rrr",
+                    
+                },
+                "fields": {
+                    "frame_idx": int(f),
+                    
+                }
+            }
+        )
+    print(len(json_body))
+    DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+

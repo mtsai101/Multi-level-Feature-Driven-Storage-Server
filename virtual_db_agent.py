@@ -13,7 +13,7 @@ import copy
 import yaml
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
-    data = yaml.load(yamlfile,Loader=yaml.FullLoader)['db_agent']
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 class DB_agent(object):
     def __init__(self):
@@ -38,7 +38,7 @@ class DB_agent(object):
             time.sleep(1)
             try:
                 if self.conn_send2DDM is None:
-                    address = ('localhost',3000)
+                    address = ('localhost',int(data['global']['agent2DDM']))
                     self.conn_send2DDM = Client(address)
                     print("[INFO] Connected with DDM...")
             except Exception as e:
@@ -47,7 +47,7 @@ class DB_agent(object):
 
         ## this port is for simulation
     def open_DP_listening_port(self):
-        address = ('localhost',6001)
+        address = ('localhost', int(data['global']['agent2DDM']))
         listener = Listener(address)
         while True:
             time.sleep(1)
