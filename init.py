@@ -105,47 +105,48 @@ if __name__=='__main__':
     #                 # os.system(cmd)
 
     # Save the shot list to databases
-    # shot_list=[]
-    # with open('./shot_list_4_15.csv', 'r') as csvfile:
-    #     rows = csv.reader(csvfile)
-    #     for row in rows:
-    #         row_s = row[0].split('/')
-    #         row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
-    #         shot_list.append((row_path,row[1]))
+    shot_list=[]
+    with open('./shot_list_4_15.csv', 'r') as csvfile:
+        rows = csv.reader(csvfile)
+        for row in rows:
+            row_s = row[0].split('/')
+            row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
+            shot_list.append((row_path,row[1]))
 
 
-    # sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
-    # for s in sorted_shot_list:
-    #     # print(s[0])
-    #     json_body = [
-    #                 {
-    #                     "measurement": "shot_list",
-    #                     "tags": {
-    #                         "name": str(s[0])
-    #                     },
-    #                     "fields": {
-    #                         "list": str(s[1])
-    #                     }
-    #                 }
-    #             ]
-    #     DBclient.write_points(json_body)
+    sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
+    for s in sorted_shot_list:
+        # print(s[0])
+        json_body = [
+                    {
+                        "measurement": "shot_list",
+                        "tags": {
+                            "name": str(s[0])
+                        },
+                        "fields": {
+                            "list": str(s[1])
+                        }
+                    }
+                ]
+        DBclient.write_points(json_body)
 
-    json_body=[]
-    for f in range(1,685):
-        #save info_amount by type
-        json_body.append(
-            {
-                "measurement": "test",
-                "tags": {
-                    "name": str(f)+"rrr",
-                    
-                },
-                "fields": {
-                    "frame_idx": int(f),
-                    
-                }
-            }
-        )
-    print(len(json_body))
-    DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+    ## Pressure test...
+    # json_body = []
+    # for f in range(800000):
+    #     ## save info_amount by type
+    #     json_body.append(
+    #         {
+    #             "measurement": "test",
+    #             "tags": {
+    #                 "name": str(f),
+    #                 "idx": int(f%85000)
+    #             },
+    #             "fields": {
+    #                 "value":str(f)+"hello"
+    #             }
+    #         }
+    #     )
+
+    # DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+
 

@@ -29,7 +29,7 @@ class WorkloadGen():
         self.pending_list = list()
         self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
         # the current time 
-        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 5, hour = 15)   
+        self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 30, hour = 15)   
         #the last updated time
         self.last_updated_clocks = datetime.datetime(year = 2020, month = 11, day = 3, hour = 18)
 

@@ -2,65 +2,81 @@ from entropy import conv_entropy
 import numpy as np
 import time
 import cv2
-import tensorflow as tf
-from tensorflow.keras import datasets, layers, models
-gpus = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
 
 
-class SimpleConv(tf.keras.Model):
-  def __init__(self):
-    super(SimpleConv, self).__init__(name='')
+def get_conv_entropy(input_file, shot_list, return_value):
+    from conv_model import SimpleConv
+    import tensorflow as tf
+    simpleConv = SimpleConv()
+    total_entropy = 0
+    vs = cv2.VideoCapture(input_file)
+    frame_count = 0
+    shot_list_idx = 0
 
-    self.conv2a = tf.keras.layers.Conv2D(64, 3, strides=(1, 1), kernel_initializer='glorot_uniform', padding='valid', data_format=None, activation='relu')
-    self.mp2a = tf.keras.layers.MaxPooling2D()
+    while True:
+        ret, frame = vs.read()
+        if ret is False:
+            break
+        if frame_count > shot_list[shot_list_idx][1]: 
+            shot_list_idx+=1
 
-    self.conv2b = tf.keras.layers.Conv2D(32, 3, strides=(1, 1), kernel_initializer='glorot_uniform', padding='valid', data_format=None, activation='relu')
-    self.mp2b = tf.keras.layers.MaxPooling2D()
+        if frame_count%24==0 and shot_list[shot_list_idx][0] == 1:
+            frame = tf.image.resize(frame, [512,512], method='bilinear')
+            frame = tf.expand_dims(frame, axis=0)/255.0
+            conv_feature = simpleConv(frame)
+            for channel in range(4):
+                signal = tf.keras.backend.flatten(conv_feature[:,:,:,channel]).numpy().round(decimals=3)
+                total_entropy += conv_entropy(signal)
 
-    self.conv2c = tf.keras.layers.Conv2D(16, 3, strides=(1, 1), kernel_initializer='glorot_uniform', padding='valid', data_format=None, activation='relu')
-    self.mp2c = tf.keras.layers.MaxPooling2D()
+        frame_count += 1
+    
+    return_value.value = total_entropy
 
-    self.conv2d = tf.keras.layers.Conv2D(4, 3, strides=(1, 1), kernel_initializer='glorot_uniform', padding='valid', data_format=None, activation='softmax')
-    self.mp2d = tf.keras.layers.MaxPooling2D()
+def get_temp_conv_entropy(input_file, shot_list, return_value):
+    from conv_model import SimpleConv
+    import tensorflow as tf
+    tempConv = SimpleConv()
+    cap = cv2.VideoCapture(input_file)
+    frame_count = 0
+    frame_sequence = []
+    sample_frame_count = 0
+    total_entropy = 0
+    shot_list_idx = 0
 
-  def call(self, input_tensor):
-    x = self.conv2a(input_tensor)
-    x = self.mp2a(x)
- 
-    x = self.conv2b(x)
-    x = self.mp2b(x)
+    while True:
+        ret, frame = cap.read()
+        if ret is False:
+            break
+        if frame_count > shot_list[shot_list_idx][1]: 
+            shot_list_idx+=1
+        if frame_count%24==0 and shot_list[shot_list_idx][0]:
+            frame_resized = tf.image.resize(frame, [512,512], method='bilinear')/255.0
+            frame_sequence.append(frame_resized) 
+            sample_frame_count += 1
+            s = time.time()
+            if sample_frame_count == 5:
+                frame_sequence_tensor = np.stack(frame_sequence, axis=0)
+                temp_conv_feature = tempConv(frame_sequence_tensor)
+                for channel in range(4):
+                    signal = tf.keras.backend.flatten(temp_conv_feature[:,:,:,channel]).numpy().round(decimals=3)
+                    total_entropy += conv_entropy(signal)
+                sample_frame_count = 0; frame_sequence=[]
 
-    x = self.conv2c(x)
-    x = self.mp2c(x)
-
-    x = self.conv2d(x)
-    x = self.mp2d(x)
-
-    return x
-
-simpleConv = SimpleConv()
-def get_conv_entropy(input_file, return_value):
-  total_entropy = 0
-  vs = cv2.VideoCapture(input_file)
-  frame_count = 0
-  while True:
-    ret, frame = vs.read()
-    if ret is False:
-      break
-    if frame_count%24==0:
-      frame = tf.image.resize(frame, [512,512], method='bilinear')
-      frame = tf.expand_dims(frame, axis=0)/255.0
-      conv_feature = simpleConv(frame)
-      for channel in range(4):
-          signal = tf.keras.backend.flatten(conv_feature[:,:,:,channel]).numpy().round(decimals=3)
-          total_entropy += conv_entropy(signal)
-    frame_count += 1
-  return_value.value = total_entropy
+        frame_count += 1
+        
+    return_value.value = total_entropy
 
 # if __name__=="__main__":
-#     input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
+#     DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+#     import ast
+#     input_file = "../storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00/Pole1_2020-11-04_02-00-00.mp4"
+    
+#     result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+input_file[1:]+"\'")
+
+#     shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
+    
 #     s = time.time()
-#     total_entropy = get_conv_entropy(input_file)
+#     return_value =0
+#     total_entropy = get_temp_conv_entropy(input_file, shot_list,return_value)
 #     print(time.time()-s)
-#     print(total_entropy)
+#     print(return_value)

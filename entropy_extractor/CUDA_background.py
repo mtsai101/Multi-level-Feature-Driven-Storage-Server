@@ -16,26 +16,11 @@ check_res = True
 rows = 1536
 cols = 2048
 
-def pick_pure_background(input_path):
-    shotDetector = ShotDetector()
-    fgbg_mog = cv2.bgsegm.createBackgroundSubtractorMOG()    
-    cap = cv2.VideoCapture(input_path)
-    while True:
-        if ret is False:
-            break
-        
-        fgmask_mog = fgbg_mog.apply(frame_preprocess)
-        flag = shotDetector.frame_under_threshold(fgmask_mog)
-        if flag
 
 def ProcVid1(proc_frame, input_path, output_path):
     global rows, cols
     process_out = start_ffmpeg_process_out(output_path, output_set, cols, rows)
-
-
     cap = cv2.VideoCapture(input_path)
-    
-
 
     while True:
         ret, in_frame = cap.read()
@@ -75,7 +60,7 @@ class ProcFrameCuda3:
     def __init__(self):
         self.rows = 1536
         self.cols = 2048
-        # self.bgmog2 = cv2.cuda.createBackgroundSubtractorMOG()
+        self.bgmog2 = cv2.cuda.createBackgroundSubtractorMOG()
         self.stream = cv2.cuda_Stream()
 
         self.frame = PinnedMem((rows,cols,1))
