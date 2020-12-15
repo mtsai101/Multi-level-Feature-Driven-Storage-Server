@@ -38,7 +38,7 @@ class Analyst(object):
         self.write2disk = False
         self.writer = None
         self.clip_name = None
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
         self.shot_list = None
         self.shot_list_index = 0
         self.per_frame_target_result = []
@@ -90,18 +90,18 @@ class Analyst(object):
             #save info_amount by type
             json_body = [
                 {
-                    "measurement": "analy_complete_result_inshot_10_16",
+                    "measurement": "analy_complete_result_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
                     "tags": {
-                        "name": str(L_decision.clip_name),
                         "a_type": str(L_decision.a_type),
                         "day_of_week":int(L_decision.day_idx),
                         "time_of_day":int(L_decision.time_idx),
+                        "a_parameter": int(L_decision.a_param), 
+                        "fps": int(L_decision.fps),
+                        "bitrate": int(L_decision.bitrate)
                     },
                     "fields": {
-                        "a_parameter": float(L_decision.a_param),
                         "total_frame_number":int(len(self.per_frame_target_result)),
-                        "fps": float(L_decision.fps),
-                        "bitrate": float(L_decision.bitrate),
+                        "name": str(L_decision.clip_name),
                         "time_consumption": float(self.processing_time),
                         "target": int(self.target_counter)
                     }
@@ -116,32 +116,32 @@ class Analyst(object):
 
     def analyze_save_per_frame(self, L_decision):
         print("[INFO] Saving the analytic result every frame")
-        json_body=[]
+        json_body=[] 
+        s = time.time()
         for f in self.per_frame_target_result:
             ## save info_amount by type
             json_body.append(
                 {
-                    "measurement": "analy_result_raw_per_frame_inshot_10_16",
+                    "measurement": "analy_result_raw_per_frame_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
                     "tags": {
-                        "name": str(L_decision.clip_name),
                         "a_type": str(L_decision.a_type),
                         "day_of_week":int(L_decision.day_idx),
                         "time_of_day":int(L_decision.time_idx),
+                        "a_parameter": int(L_decision.a_param),
+                        "fps": int(L_decision.fps),
+                        "bitrate": int(L_decision.bitrate),
                         "frame_idx": int(f[0])
                     },
                     "fields": {
-                        "a_parameter": float(L_decision.a_param),
-                        "fps": float(L_decision.fps),
-                        "bitrate": float(L_decision.bitrate),
+                        "name": str(L_decision.clip_name),
                         "time_consumption": float(f[2]),
                         "target": int(f[1])
                     }
                 }
             )
+        self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=80000, protocol='json')
 
-        self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
-
-        print("[INFO] Record each frame results in the shot")
+        print("[INFO] Record each frame results in the shot, take %.2f second"%(time.time()-s))
         
 
     def clean(self):
@@ -195,7 +195,7 @@ class Analyst(object):
                 if self.write2disk:
                     self.writer.write(frame)
                     continue
-
+            
             # execute yolo
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image = cv2.resize(frame_rgb,

@@ -20,7 +20,7 @@ class DB_agent(object):
     def __init__(self):
     self.mode = 1
     self.pending_list = list()
-    self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+    self.DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
 
 
     self.conn_send2DDM = None

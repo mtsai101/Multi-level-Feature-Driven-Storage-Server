@@ -25,9 +25,8 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 # iATable = IATable(False)
 class WorkloadGen():
     def __init__(self):
-        self.mode = 1
         self.pending_list = list()
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
         # the current time 
         self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 30, hour = 15)   
         #the last updated time
@@ -79,13 +78,12 @@ class WorkloadGen():
 
     @setInterval(1)
     def check_ready(self):
-        if self.mode == 1:
-            SLE_ready = self.conn_send2SLE 
-            AP_ready = self.conn_listen2AP
-            if SLE_ready and AP_ready:
-                self.ready.set()
-        else:
-            print("Error camera mode!")
+
+        SLE_ready = self.conn_send2SLE 
+        AP_ready = self.conn_listen2AP
+        if SLE_ready and AP_ready:
+            self.ready.set()
+
 
     #set port, run monitor    
     def run(self):
@@ -102,27 +100,14 @@ class WorkloadGen():
     # @setInterval(trigger_interval*3600)
     def do(self):
         while True:
-            if self.mode == 1:
-                t = threading.Thread(target=self.SLE_gen_workload)
-                t.start()
-                t.join()    
-                print("Listening from AP & Waiting for generating the next batch of video...")
-                finish = self.conn_listen2AP.recv() 
-                self.last_updated_clocks = self.cur_clock
-                self.cur_clock += trigger_interval
-                break
-                
-
-            elif self.mode ==2:
-                t = threading.Thread(target=self.DDM_gen_workload)
-                t.start()
-                t.join()
-                print("Listening from DP & Waiting for generating the next batch of video...")
-                finish = self.conn_listen2DP.recv()
-
-                if self.DDMflag ==len(self.DDM_pending_videos)-1:
-                    break
-            
+            t = threading.Thread(target=self.SLE_gen_workload)
+            t.start()
+            t.join()    
+            print("Listening from AP & Waiting for generating the next batch of video...")
+            finish = self.conn_listen2AP.recv() 
+            self.last_updated_clocks = self.cur_clock
+            self.cur_clock += trigger_interval
+            break
 
         print("Evaluation finish!!!")
         
@@ -134,7 +119,7 @@ class WorkloadGen():
             result_list = []
             i = copy.copy(self.last_updated_clocks)
             
-            ## if we ned time-series
+            ## if we need time-series
             # while i <= self.cur_clock:
                 # result = self.DBclient.query("SELECT * FROM raw_"+ str(i.month) +"_"+str(i.day)) 
                 # print("SELECT * FROM raw_"+ str(i.month) +"_"+str(i.day))

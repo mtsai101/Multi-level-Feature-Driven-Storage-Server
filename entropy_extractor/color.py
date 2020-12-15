@@ -9,7 +9,6 @@ def get_color_entropy(input_path, shot_list, return_value):
     total_entropy = 0
     frame_count = 0
     shot_list_idx = 0
-
     while True:
 
         ret, frame = vs.read()
@@ -17,7 +16,7 @@ def get_color_entropy(input_path, shot_list, return_value):
             break
         if frame_count > shot_list[shot_list_idx][1]: 
             shot_list_idx+=1
-        if frame_count%24==0 and shot_list[shot_list_idx][0] == 1:
+        if frame_count%24 == 0 and shot_list[shot_list_idx][0] == 1:
             
             frame_rgb = np.dsplit(frame, 3)
             

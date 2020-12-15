@@ -10,31 +10,17 @@ if __name__=='__main__':
 
     
 
-    if workloadGen.mode==1:
-        try:
-            t = threading.Thread(target=workloadGen.open_AP_listening_port,args=())
-            t.start()
-        except Exception as e:
-            print(e)
-        try:
-            t2 = threading.Thread(target=workloadGen.open_SLE_sending_port,args=())
-            t2.start()
-        except Exception as e:
-            print(e)
+    try:
+        t = threading.Thread(target=workloadGen.open_AP_listening_port,args=())
+        t.start()
+    except Exception as e:
+        print(e)
+    try:
+        t2 = threading.Thread(target=workloadGen.open_SLE_sending_port,args=())
+        t2.start()
+    except Exception as e:
+        print(e)
 
-    elif workloadGen.mode==2:
-        try:
-            t = threading.Thread(target=workloadGen.open_DP_listening_port,args=())
-            t.start()
-        except Exception as e:
-            print(e)
-        try:
-            t2 = threading.Thread(target=workloadGen.open_DDM_sending_port,args=())
-            t2.start()
-        except Exception as e:
-            print(e)
-    else:
-        print("Error camera mode!")
         
     try:
         t3 = threading.Thread(target=workloadGen.check_ready,args=())

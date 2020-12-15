@@ -13,7 +13,7 @@ import os
 import concurrent.futures
 import ast 
 
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
 
 
 def background_subtraction(pending_tuple):
@@ -33,7 +33,7 @@ def launch_shot_detector(pending_tuple):
 
 def feature_procs(pending_tuple):
     s = time.time()
-    print("extracting :", pending_tuple[0])
+    print("[INFO] Extracting :", pending_tuple[0])
     try:
         result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+pending_tuple[0][1:]+"\'")
         shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
@@ -59,7 +59,7 @@ def feature_procs(pending_tuple):
                     {
                         "measurement": "visual_features_entropy_unnormalized",
                         "tags": {
-                            "name": str(input_path)
+                            "name": str(pending_tuple[0])
                         },
                         "fields": {
                             "color": float(color_entropy.value),
@@ -87,11 +87,11 @@ if __name__=="__main__":
     # mp.set_start_method('spawn') # This is important for multiprocessing CUDA and should be here
 
     feature_pending_list = [] # (input_path, back_path)
-    for d in range(4,10):
+    for d in range(30,31):
         month = 11; day=d
         month = str(month) if month>9 else "0"+str(month)
         day = str(day) if day>9 else "0"+str(day)
-        input_dir = "../storage_server_volume/SmartPole/Pole1/2020-"+str(month)+"-"+str(day)+"_00-00-00"
+        input_dir = "/home/min/SmartPole/Pole1/2020-"+str(month)+"-"+str(day)+"_00-00-00"
         # input_dir = "/home/min/SmartPole/Pole1/2020-"+str(month)+"-"+str(day)+"_00-00-00"
 
         v_li = os.listdir(input_dir)
@@ -109,9 +109,9 @@ if __name__=="__main__":
 
             
     # if the video already be background subtraction, leave it be commented
-    # for pending_tuple in feature_pending_list:
-    #     background_subtraction(pending_tuple)
-    # print("Background Subtraction Completed")
+    for pending_tuple in feature_pending_list:
+        background_subtraction(pending_tuple)
+    print("Background Subtraction Completed")
 
 
 
@@ -124,7 +124,7 @@ if __name__=="__main__":
         # p.map(launch_shot_detector, feature_pending_list)
     #     print("Shot Detection Completed")
 
-    for pending_tuple in feature_pending_list:
-        feature_procs(pending_tuple)
+    # for pending_tuple in feature_pending_list:
+    #     feature_procs(pending_tuple)
     
     print("Feature Extraction Completed")

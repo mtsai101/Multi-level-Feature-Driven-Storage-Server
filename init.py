@@ -1,5 +1,5 @@
 from influxdb import InfluxDBClient
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
 
 # from optimal_downsampling_manager.resource_predictor.table_estimator import AnalyTimeTable, DownTimeTable, DownRatioTable, IATable
 import os
@@ -104,49 +104,96 @@ if __name__=='__main__':
     #                 print(cmd)
     #                 # os.system(cmd)
 
-    # Save the shot list to databases
-    shot_list=[]
-    with open('./shot_list_4_15.csv', 'r') as csvfile:
-        rows = csv.reader(csvfile)
-        for row in rows:
-            row_s = row[0].split('/')
-            row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
-            shot_list.append((row_path,row[1]))
+    # # Save the shot list to databases
+    # shot_list=[]
+    # with open('./shot_list_4_15.csv', 'r') as csvfile:
+    #     rows = csv.reader(csvfile)
+    #     for row in rows:
+    #         row_s = row[0].split('/')
+    #         row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
+    #         shot_list.append((row_path,row[1]))
 
 
-    sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
-    for s in sorted_shot_list:
-        # print(s[0])
-        json_body = [
-                    {
-                        "measurement": "shot_list",
-                        "tags": {
-                            "name": str(s[0])
-                        },
-                        "fields": {
-                            "list": str(s[1])
-                        }
-                    }
-                ]
-        DBclient.write_points(json_body)
+    # sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
+    # for s in sorted_shot_list:
+    #     # print(s[0])
+    #     json_body = [
+    #                 {
+    #                     "measurement": "shot_list",
+    #                     "tags": {
+    #                         "name": str(s[0])
+    #                     },
+    #                     "fields": {
+    #                         "list": str(s[1])
+    #                     }
+    #                 }
+    #             ]
+    #     DBclient.write_points(json_body)
 
     ## Pressure test...
-    # json_body = []
-    # for f in range(800000):
-    #     ## save info_amount by type
-    #     json_body.append(
-    #         {
-    #             "measurement": "test",
-    #             "tags": {
-    #                 "name": str(f),
-    #                 "idx": int(f%85000)
-    #             },
-    #             "fields": {
-    #                 "value":str(f)+"hello"
+    json_body = []
+    import time 
+    day = 0
+    hour = 0
+    frame_id = 0
+    for f in range(850*24):
+
+        ## save info_amount by type
+        json_body.append(
+            {
+                "measurement": "insertTest",
+                "tags": {
+                    "name": "path_"+str(day)+str(hour),
+                    "hour": int(hour),
+                    "idx": int(frame_id)
+                },
+                "fields": {
+                    
+                    "value":str(f)+"hello"
+                }
+            }
+        )
+        frame_id += 1
+        if frame_id==850:
+            hour = hour+1
+            frame_id = 0
+            if hour==24:
+                hour = 0
+                day +=1
+
+
+    s = time.time()
+    DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=80000, protocol='json')
+    print("%.2f"%(time.time()-s))
+
+    # result = DBclient.query("SELECT * FROM analy_result_raw_per_frame_inshot_4_9")
+    # result_list = list(result.get_points(measurement='analy_result_raw_per_frame_inshot_4_9'))
+
+    # back_DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
+
+    # json_body=[] 
+    # for f in result_list:
+        
+    #     if f['name'].split('/')[-2]=="2020-11-04_00-00-00":
+    #         ## save info_amount by type
+    #         json_body = [
+    #             {
+    #                 "measurement": "analy_result_raw_per_frame_inshot_11_4",
+    #                 "tags": {
+    #                     "name": str(f['name']),
+    #                     "a_type": str(f['a_type']),
+    #                     "day_of_week":int(f['day_of_week']),
+    #                     "time_of_day":int(f['time_of_day']),
+    #                 },
+    #                 "fields": {
+    #                     "frame_idx": int(f['frame_idx']),
+    #                     "a_parameter": float(f['a_parameter']),
+    #                     "fps": float(f['fps']),
+    #                     "bitrate": float(f['bitrate']),
+    #                     "time_consumption": float(f['time_consumption']),
+    #                     "target": int(f['target'])
+    #                 }
     #             }
-    #         }
-    #     )
-
-    # DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
-
+    #         ]
+    #         back_DBclient.write_points(json_body)
 

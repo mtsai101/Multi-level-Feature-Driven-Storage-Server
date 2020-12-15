@@ -15,7 +15,7 @@ global:
     - 500.0 
     - 100.0
     - 10.0
-  
+  database: 8087
   # camera2SLE: 5000
   # SLE2AP: 7000
   # SLE2camera: 6000

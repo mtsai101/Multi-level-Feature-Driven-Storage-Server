@@ -10,6 +10,8 @@ class Decision():
         ## Here we use others to pass [a_param_0, a_param_1, raw_size]
         self.others = others
         self.shot_list = shot_list
+        date =  clip_name.split('/')[-2].split('_')[0].split('-')
+        self.month, self.day = int(date[1]), int(date[2])
         self.day_idx, self.time_idx = get_context(clip_name)
         
 

@@ -8,7 +8,7 @@ from optimal_downsampling_manager.resource_predictor.table_estimator import get_
 
 class Transformer:
     def __init__(self):
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
         self.parameter = 0
         self.ratio = 1
         self.execute_time = 0
