@@ -1,36 +1,41 @@
 from influxdb import InfluxDBClient
-DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
-
 # from optimal_downsampling_manager.resource_predictor.table_estimator import AnalyTimeTable, DownTimeTable, DownRatioTable, IATable
 import os
 import csv
 import ast
+import yaml
+
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
+DBclient = InfluxDBClient('172.17.0.2', data['global']['database'], 'root', 'root', 'storage')
+
 if __name__=='__main__':
     
     # init raw video database
-    # for i in range(10,16):
-    #     base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
-    #     video_li = os.listdir(base_dir)
-    #     video_li = sorted(video_li, key= lambda x: x)
-    #     for v in video_li:
-    #         v_path = os.path.join(base_dir,v)
+    for i in range(10,16):
+        base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
+        video_li = os.listdir(base_dir)
+        video_li = sorted(video_li, key= lambda x: x)
+        for v in video_li:
+            v_path = os.path.join(base_dir,v)
             
-    #         if os.path.isdir(v_path):
-    #             continue
-    #         json_body = [
-    #                             {
-    #                                 "measurement": "raw_11_"+str(i),
-    #                                 "tags": {
-    #                                     "name": str(v_path)
+            if os.path.isdir(v_path):
+                continue
+            json_body = [
+                                {
+                                    "measurement": "raw_11_"+str(i),
+                                    "tags": {
+                                        "name": str(v_path)
                                         
-    #                                 },
-    #                                 "fields": {
-    #                                     "host": "webcamPole1"
-    #                                 }
-    #                             }
-    #                         ]
+                                    },
+                                    "fields": {
+                                        "host": "webcamPole1"
+                                    }
+                                }
+                            ]
             
-    #         DBclient.write_points(json_body)
+            DBclient.write_points(json_body)
 
     # init analy result
     # json_body = [
@@ -104,7 +109,7 @@ if __name__=='__main__':
     #                 print(cmd)
     #                 # os.system(cmd)
 
-    # # Save the shot list to databases
+    # Save the shot list to databases
     # shot_list=[]
     # with open('./shot_list_4_15.csv', 'r') as csvfile:
     #     rows = csv.reader(csvfile)
@@ -131,40 +136,40 @@ if __name__=='__main__':
     #     DBclient.write_points(json_body)
 
     ## Pressure test...
-    json_body = []
-    import time 
-    day = 0
-    hour = 0
-    frame_id = 0
-    for f in range(850*24):
+    # json_body = []
+    # import time 
+    # day = 0
+    # hour = 0
+    # frame_id = 0
+    # for f in range(850*24):
 
-        ## save info_amount by type
-        json_body.append(
-            {
-                "measurement": "insertTest",
-                "tags": {
-                    "name": "path_"+str(day)+str(hour),
-                    "hour": int(hour),
-                    "idx": int(frame_id)
-                },
-                "fields": {
+    #     ## save info_amount by type
+    #     json_body.append(
+    #         {
+    #             "measurement": "insertTest",
+    #             "tags": {
+    #                 "name": "path_"+str(day)+str(hour),
+    #                 "hour": int(hour),
+    #                 "idx": int(frame_id)
+    #             },
+    #             "fields": {
                     
-                    "value":str(f)+"hello"
-                }
-            }
-        )
-        frame_id += 1
-        if frame_id==850:
-            hour = hour+1
-            frame_id = 0
-            if hour==24:
-                hour = 0
-                day +=1
+    #                 "value":str(f)+"hello"
+    #             }
+    #         }
+    #     )
+    #     frame_id += 1
+    #     if frame_id==850:
+    #         hour = hour+1
+    #         frame_id = 0
+    #         if hour==24:
+    #             hour = 0
+    #             day +=1
 
 
-    s = time.time()
-    DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=80000, protocol='json')
-    print("%.2f"%(time.time()-s))
+    # s = time.time()
+    # DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=80000, protocol='json')
+    # print("%.2f"%(time.time()-s))
 
     # result = DBclient.query("SELECT * FROM analy_result_raw_per_frame_inshot_4_9")
     # result_list = list(result.get_points(measurement='analy_result_raw_per_frame_inshot_4_9'))

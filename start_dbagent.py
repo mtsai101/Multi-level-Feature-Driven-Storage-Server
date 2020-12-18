@@ -1,9 +1,7 @@
-
 from multiprocessing import Process
-from db_agent import 
+from virtual_db_agent import DB_agent
 import os
 import time
-import virtual_camera
 import threading
 if __name__=='__main__':
     print("[INFO] running db agent...")

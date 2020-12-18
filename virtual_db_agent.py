@@ -1,6 +1,6 @@
 from multiprocessing.connection import Client,Listener
 from util.SetInterval import setInterval
-from optimal_downsampling_manager.resource_predictor.table_estimator import get_context,IATable,drop_measurement_if_exist
+# from optimal_downsampling_manager.resource_predictor.table_estimator import get_context,IATable,drop_measurement_if_exist
 
 from influxdb import InfluxDBClient
 from pathlib import Path
@@ -10,29 +10,27 @@ import time
 import os
 import csv
 import copy
-
+import yaml
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 class DB_agent(object):
-
     def __init__(self):
-    self.mode = 1
-    self.pending_list = list()
-    self.DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
+        self.pending_list = list()
+        self.DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
 
 
-    self.conn_send2DDM = None
-    self.conn_listen2DP = None
-    self.ready = threading.Event()
-    self.lock=threading.Lock()
-    
+        self.conn_send2DDM = None
+        self.conn_listen2DP = None
+        self.ready = threading.Event()
+        self.lock=threading.Lock()
+        
 
-    self.DDM_size_threshold = 5*1024
-    self.DDMflag = 0
-    self.DDM_pending_videos = []
-    self.storage_dir = "./storage_server_volume"
+        self.DDM_size_threshold = 5*1024
+        self.DDMflag = 0
+        self.DDM_pending_videos = []
+        self.storage_dir = "./storage_server_volume"
 
 
     def open_DDM_sending_port(self):
@@ -49,7 +47,7 @@ class DB_agent(object):
 
         ## this port is for simulation
     def open_DP_listening_port(self):
-        address = ('localhost', int(data['global']['agent2DDM']))
+        address = ('localhost', int(data['global']['DP2agent']))
         listener = Listener(address)
         while True:
             time.sleep(1)
@@ -73,12 +71,12 @@ class DB_agent(object):
             if DDM_ready and DP_ready:
                 self.ready.set()
         except Exception as e:
-            print("Error camera mode!")
+            print(e)
 
     #set port, run monitor    
     def run(self):
         self.ready.wait() #wait every port set up
-        print("[INFO] Camera is running the task")
+        print("[INFO] Agent is running the task")
         try:
             self.do()
             input("Press any key to stop...")
@@ -94,9 +92,9 @@ class DB_agent(object):
             print("Listening from DP & Waiting for generating the next batch of video...")
             finish = self.conn_listen2DP.recv()
 
-            if self.DDMflag ==len(self.DDM_pending_videos)-1:
-                break
-            
+            # if self.DDMflag ==len(self.DDM_pending_videos)-1:
+            #     break
+            break
 
         print("Evaluation finish!!!")
     
@@ -106,10 +104,9 @@ class DB_agent(object):
         try:
             self.lock.acquire()
             print("Generate new pending list...")
-            ## Get the pending video for downsampling from databases 'stored_month_day'
-            result = self.DBclient.query("SELECT * FROM videos_in_server")
-            self.DDM_pending_videos.extend(list(result.get_points(measurement="videos_in_server")))
-                
+            json_body = []
+            for i in range(10,16):
+                result = self.DBclient.query("select * from raw_11_"+str(i)) 
 
             # for r in self.DDM_pending_videos[self.DDMflag:]:
                 # clip_date = int(r['name'].split("/")[-2].split("_")[-1])
@@ -137,32 +134,37 @@ class DB_agent(object):
                 #     os.system(cmd)
                 
 
-                # raw_size = os.path.getsize(stored_clip_name) / pow(2,20)
-                
-                # ???? what is this ??? maybe to ensure the least video size
-                # if raw_size<=0:
-                #     raw_size = 6
+                # Save and log the new videos in the database
+                for c in list(result.get_points(measurement="raw_11_"+str(i))):
+                    raw_size = os.path.getsize(c['name']) / pow(2,20)
+                    parse =  c['name'].split('/')[-1].split('_')
+                    date = parse[-2].split("-")
+                    hour = int(parse[-1].split("-")[0])
 
-                ## Save and log the new videos in the database
-                # json_body = [
-                #     {
-                #         "measurement": "",
-                #         "tags": {
-                #             "name": str(clip_name),
-                #             "fps":float(24.0),
-                #             "bitrate":float(1000.0),
-                #             "host": "webcamPole1"
-                #         },
-                #         "fields": {
-                #             "a_parameter_0": float(r['a_para_illegal_parking']),
-                #             "a_parameter_1": float(r['a_para_people_counting']),
-                #             "raw_size":float(raw_size)
-                #         }
-                #     }
-                # ]
-                # self.DBclient.write_points(json_body)
-                
-
+                    json_body.append(
+                        {
+                            "measurement": "pending_video",
+                            "tags": {
+                                "month": int(date[1]),
+                                "day": int(date[2]),
+                                "hour": int(hour),
+                                "prev_fps":int(24),
+                                "prev_bitrate":int(1000),
+                                "fps": int(12),
+                                "bitrate": int(500),
+                                "a_para_illegal_parking": int(1),
+                                "a_para_people_counting": int(1),
+                                
+                            },
+                            "fields": {
+                                "name": str(c['name']),
+                                "raw_size":float(raw_size)
+                            }
+                        }
+                    )
+                    
+            self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=1000, protocol='json')
+            
                 # sumsize = sum(f.stat().st_size for f in Path(self.storage_dir).glob('**/*') if f.is_file())
                 # sumsize = sumsize/pow(2,20)
                 # if sumsize > self.DDM_size_threshold:
@@ -170,9 +172,12 @@ class DB_agent(object):
                 #     print("Out of size at %s, trigger prob2..."%(r['name']))
                 #     break
 
-                
+                ## Get the pending video for downsampling from databases 'stored_month_day'
+
+
+            
             self.lock.release()
-            self.conn_send2DDM.send(self.DDM_pending_videos[self.DDMflag:])
+            self.conn_send2DDM.send(True)
             print("Send signal to DDM")
         except Exception as e:
             print(e)

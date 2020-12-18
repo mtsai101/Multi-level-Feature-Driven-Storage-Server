@@ -2,8 +2,6 @@ import os
 from multiprocessing import Process
 from optimal_downsampling_manager.downsample_decision_maker import DownSampleDecisionMaker
 import threading 
-
-
 import time
 
 if __name__ == '__main__':
@@ -11,7 +9,7 @@ if __name__ == '__main__':
     DDM = DownSampleDecisionMaker()
 
     try:
-        t2 = threading.Thread(target=DDM.open_VC_listening_port,args=())
+        t2 = threading.Thread(target=DDM.open_DBA_listening_port,args=())
         t2.start()
     except Exception as e:
         print(e)

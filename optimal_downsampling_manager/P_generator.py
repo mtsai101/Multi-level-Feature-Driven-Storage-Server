@@ -6,7 +6,7 @@ from pathlib import Path
 from threading import Lock
 from influxdb import InfluxDBClient
 from optimal_downsampling_manager.decision_type import Decision
-from optimal_downsampling_manager.resource_predictor.table_estimator import IATable,DownTimeTable,DownRatioTable,get_context
+# from optimal_downsampling_manager.resource_predictor.table_estimator import IATable,DownTimeTable,DownRatioTable,get_context
 from influxdb import InfluxDBClient
 import time
 import sys
@@ -14,7 +14,7 @@ import random
 import numpy
 import math
 import csv
-
+import yaml
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 delta_d = 3600*6 
@@ -32,40 +32,40 @@ pre_d_selected=np.array(pre_d_selected)
 debug = True
 f_c = 24*60
 V = 3*1024
-iATable = IATable(False)
-downTimeTable = DownTimeTable(False)
-downRatioTable = DownRatioTable(False)
+# iATable = IATable(False)
+# downTimeTable = DownTimeTable(False)
+# downRatioTable = DownRatioTable(False)
 week=[
     [0 for i in range(12)],
     [0 for i in range(12)]
 ]
 
-DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
+DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
 
 # this generator will conduct information amount estimation algorithm and generate S
 def generate_P(P_type='', clip_list=[]):
 
-    # clip_array = np.zeros((len(clip_list),4),dtype=np.uint8)
-    # clip_meta = np.zeros((len(clip_list),3),dtype=np.float32)
-    # for id_r, r in enumerate(clip_list):
-    #     clip_array[id_r][0], clip_array[id_r][1] = get_context(r['name'])
-    #     clip_array[id_r][2], clip_array[id_r][3] = pre_frame_rate.index(float(r['fps'])), pre_bitrate.index(float(r['bitrate']))
+    # target_clip_num = clip_array.shape[0]
+    # target_deadline = delta_d
+    # target_space = int(V)
 
-    #     clip_meta[id_r][0] = r['a_parameter_0']
-    #     clip_meta[id_r][1] = r['a_parameter_1']
-
-    #     clip_meta[id_r][2] = r['raw_size']
-
-    target_clip_num = clip_array.shape[0]
-    target_deadline = delta_d
-    target_space = int(V)
-
+    space_experiment = Path("./storage_server_volume/storage_video")
 
     if P_type=='None':
         P_list=[]
-        space_experiment = Path("./storage_server_volume/storage_video")
+        
         for c in clip_list:
-            d = Decision(clip_name=c['name'], fps=12.0, bitrate=500.0, others=[c['a_para_illegal_parking'],c['a_para_people_counting'],c['raw_size']])
+            d = Decision(
+                        clip_name=c['name'], 
+                        prev_fps = c['prev_fps'], 
+                        prev_bitrate = c['prev_bitrate'],
+                        fps=12,
+                        bitrate=500,
+                        others=[c['a_para_illegal_parking'],c['a_para_people_counting'],c['raw_size']]
+                )
             P_list.append(d)
 
         return P_list

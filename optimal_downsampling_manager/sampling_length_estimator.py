@@ -20,8 +20,6 @@ trigger_Interval = 6
 class SamplingLengthEstimator(object):
     def __init__(self):
         self.conn_listenVirtualCamera = None      
-
-
         self.conn_send2Analytic = None
         self.ready = threading.Event()
     
