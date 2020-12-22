@@ -42,7 +42,7 @@ class Transformer:
 
                 cmd = 'ffmpeg -hwaccel cuvid -c:v hevc_cuvid -i %s -c:v hevc_nvenc -rc cbr_hq -r %d -b:v %dK -maxrate:v %dK -y %s' %(P_decision.clip_name, P_decision.fps, P_decision.bitrate, P_decision.bitrate, converted_path)
                 print(cmd)
-                # os.system(cmd)
+                os.system(cmd)
                 
                 execution_time = time.time() - start_time
                 self.total_downsample_time += execution_time
