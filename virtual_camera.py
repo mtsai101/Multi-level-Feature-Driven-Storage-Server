@@ -142,10 +142,9 @@ class WorkloadGen():
                 # i += trigger_interval
             ## if we just want to specify some videos    
 
-            
-            for i in range(10,16):
-                result = self.DBclient.query("select * from raw_11_"+str(i)) 
-                result_list += list(result.get_points(measurement="raw_11_"+str(i)))
+        
+            result = self.DBclient.query("select * from raw_11_5")
+            result_list += list(result.get_points(measurement="raw_11_5"))
 
 
             for r in result_list:
