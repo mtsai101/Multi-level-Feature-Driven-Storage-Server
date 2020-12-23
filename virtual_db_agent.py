@@ -140,7 +140,7 @@ class DB_agent(object):
                     parse =  c['name'].split('/')[-1].split('_')
                     date = parse[-2].split("-")
                     hour = int(parse[-1].split("-")[0])
-
+                    
                     json_body.append(
                         {
                             "measurement": "pending_video",
@@ -150,8 +150,8 @@ class DB_agent(object):
                                 "hour": int(hour),
                                 "prev_fps":int(24),
                                 "prev_bitrate":int(1000),
-                                "fps": int(12),
-                                "bitrate": int(500),
+                                "fps": int(1),
+                                "bitrate": int(10),
                                 "a_para_illegal_parking": int(1),
                                 "a_para_people_counting": int(1),
                                 

@@ -60,11 +60,11 @@ def generate_P(P_type='', clip_list=[]):
         for c in clip_list:
             d = Decision(
                         clip_name=c['name'], 
-                        prev_fps = c['prev_fps'], 
-                        prev_bitrate = c['prev_bitrate'],
-                        fps=12,
-                        bitrate=500,
-                        others=[c['a_para_illegal_parking'],c['a_para_people_counting'],c['raw_size']]
+                        prev_fps = int(c['prev_fps']), 
+                        prev_bitrate = int(c['prev_bitrate']),
+                        fps=int(c['fps']),
+                        bitrate=int(c['bitrate']),
+                        others=[int(c['a_para_illegal_parking']),int(c['a_para_people_counting']),float(c['raw_size'])]
                 )
             P_list.append(d)
 

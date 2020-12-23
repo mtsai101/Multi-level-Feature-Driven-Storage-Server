@@ -5,10 +5,11 @@ import time
 from influxdb import InfluxDBClient
 from optimal_downsampling_manager.resource_predictor.table_estimator import get_context
 import yaml
+import sys
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
-
+os.environ["CUDA_VISIBLE_DEVICES"]="3"
 class Transformer:
     def __init__(self):
         self.DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
@@ -17,7 +18,7 @@ class Transformer:
         print("FPS:",P_decision.fps,"Bitrate:",P_decision.bitrate)
         
         try:
-            if P_decision.fps > 0  and P_decision.bitrate >0:
+            if int(P_decision.fps) > 0  and int(P_decision.bitrate) > 0:
                 start_time = time.time()
 
                 # file_path = self.rewrite_path(clip_name,self.fps,self.bitrate)
@@ -30,7 +31,7 @@ class Transformer:
 
                 ## convert from prevfps_prevbitrate to fps_bitrate
                 parsed_video_path = P_decision.clip_name.split("/")
-                converted_folder = str(P_decision.prev_fps)+"-"+str(P_decision.prev_bitrate)+"_"+str(P_decision.fps)+"-"+str(P_decision.bitrate)
+                converted_folder = str(P_decision.fps)+"-"+str(P_decision.bitrate)
                 dest_folder = os.path.join("./storage_server_volume", "converted_videos", converted_folder, parsed_video_path[-2])
                 if not os.path.isdir(dest_folder):
                     os.makedirs(dest_folder)
@@ -41,7 +42,7 @@ class Transformer:
                 
 
                 cmd = 'ffmpeg -hwaccel cuvid -c:v hevc_cuvid -i %s -c:v hevc_nvenc -rc cbr_hq -r %d -b:v %dK -maxrate:v %dK -y %s' %(P_decision.clip_name, P_decision.fps, P_decision.bitrate, P_decision.bitrate, converted_path)
-                print(cmd)
+                # print(cmd)
                 os.system(cmd)
                 
                 execution_time = time.time() - start_time
@@ -51,23 +52,25 @@ class Transformer:
                 # os.system(cmd)
                 
 
-                ratio = os.path.getsize(converted_path) / P_decision.others[2]
+                ratio = os.path.getsize(converted_path) / (P_decision.others[2]*pow(2,20))
+
                 self.save_converted_video(P_decision, ratio, execution_time)
 
                 # self.save(P_decision, converted_folder)
 
-            elif P_decision.fps==-1 and P_decision.bitrate==-1: ## remove the clip from the server
-                cmd = "rm %s"%(P_decision.clip_name)
-                # os.system(cmd)
-                self.DBclient.query("DELETE FROM videos_in_server WHERE \"name\"=\'"+P_decision.clip_name+"\'")
+            # elif P_decision.fps==-1 and P_decision.bitrate==-1: ## remove the clip from the server
+            #     cmd = "rm %s"%(P_decision.clip_name)
+            #     # os.system(cmd)
+            #     self.DBclient.query("DELETE FROM videos_in_server WHERE \"name\"=\'"+P_decision.clip_name+"\'")
             else:
                 print("[ERROR] Error downsampling type")
         except Exception as e:
             print(e)
+            sys.exit()
 
         
     def save_converted_video(self, P_decision, ratio, execution_time):
-        son_body = [
+        json_body = [
             {
                 "measurement": "down_result",
                 "tags": {
