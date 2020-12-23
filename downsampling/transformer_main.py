@@ -23,7 +23,7 @@ class DownSample_Platform():
         ## this port is for simulator
 
     ## this port is for simulator
-    def open_VC_sending_port(self):
+    def open_DBA_sending_port(self):
         print("[INFO] Listening from DB Agent")
         while True:
             time.sleep(3)
@@ -38,11 +38,11 @@ class DownSample_Platform():
     def run(self):
         while True:
             try:
-                print("[INFO] Listening port DDM")
+                print("[INFO] Listening from DDM")
                 conn = self.listener.accept()
                 print('connection accepted from', self.listener.last_accepted)
                 while True:
-                    P_decision_list,invoke_time = conn.recv()
+                    P_decision_list = conn.recv()
                     try:
                         print("T_decision length: ",len(P_decision_list))
                         
@@ -80,7 +80,7 @@ class DownSample_Platform():
                 print('[INFO]',multiprocessing.current_process())
                 
                 transformer.transform(P_decision)
-                total_downsample_time += transformer.execute_time
+                
             except Exception as e:
                 print(e)
         

@@ -10,17 +10,18 @@ if __name__=='__main__':
 
     
 
-    if workloadGen.mode==1:
-        try:
-            t = threading.Thread(target=workloadGen.open_AP_listening_port,args=())
-            t.start()
-        except Exception as e:
-            print(e)
-        try:
-            t2 = threading.Thread(target=workloadGen.open_SLE_sending_port,args=())
-            t2.start()
-        except Exception as e:
-            print(e)
+    try:
+        t = threading.Thread(target=workloadGen.open_AP_listening_port,args=())
+        t.start()
+    except Exception as e:
+        print(e)
+    try:
+        t2 = threading.Thread(target=workloadGen.open_SLE_sending_port,args=())
+        t2.start()
+    except Exception as e:
+        print(e)
+
+        
     try:
         t3 = threading.Thread(target=workloadGen.check_ready,args=())
         t3.start()

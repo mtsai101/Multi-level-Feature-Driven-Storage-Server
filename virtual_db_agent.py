@@ -1,6 +1,6 @@
 from multiprocessing.connection import Client,Listener
 from util.SetInterval import setInterval
-from optimal_downsampling_manager.resource_predictor.table_estimator import get_context,IATable,drop_measurement_if_exist
+# from optimal_downsampling_manager.resource_predictor.table_estimator import get_context,IATable,drop_measurement_if_exist
 
 from influxdb import InfluxDBClient
 from pathlib import Path
@@ -18,7 +18,7 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 class DB_agent(object):
     def __init__(self):
         self.pending_list = list()
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
 
 
         self.conn_send2DDM = None
@@ -47,7 +47,7 @@ class DB_agent(object):
 
         ## this port is for simulation
     def open_DP_listening_port(self):
-        address = ('localhost', int(data['global']['agent2DDM']))
+        address = ('localhost', int(data['global']['DP2agent']))
         listener = Listener(address)
         while True:
             time.sleep(1)
@@ -71,12 +71,16 @@ class DB_agent(object):
             if DDM_ready and DP_ready:
                 self.ready.set()
         except Exception as e:
-            print("Error camera mode!")
+            print(e)
 
     #set port, run monitor    
     def run(self):
         self.ready.wait() #wait every port set up
+<<<<<<< HEAD
         print("[INFO] DBA is running the task")
+=======
+        print("[INFO] Agent is running the task")
+>>>>>>> 42cc2248a98fa67668ca59a4e89187610d06e7f5
         try:
             self.do()
             input("Press any key to stop...")
@@ -92,9 +96,9 @@ class DB_agent(object):
             print("Listening from DP & Waiting for generating the next batch of video...")
             finish = self.conn_listen2DP.recv()
 
-            if self.DDMflag ==len(self.DDM_pending_videos)-1:
-                break
-            
+            # if self.DDMflag ==len(self.DDM_pending_videos)-1:
+            #     break
+            break
 
         print("Evaluation finish!!!")
     
@@ -105,11 +109,88 @@ class DB_agent(object):
         try:
             self.lock.acquire()
             print("Generate new pending list...")
+<<<<<<< HEAD
             ## Get the pending video for downsampling from databases 'stored_month_day'
             result = self.DBclient.query("SELECT * FROM videos_in_server")
             self.DDM_pending_videos.extend(list(result.get_points(measurement="videos_in_server")))
             self.lock.release()
             # self.conn_send2DDM.send(self.DDM_pending_videos[self.DDMflag:])
+=======
+            json_body = []
+            for i in range(10,16):
+                result = self.DBclient.query("select * from raw_11_"+str(i)) 
+
+            # for r in self.DDM_pending_videos[self.DDMflag:]:
+                # clip_date = int(r['name'].split("/")[-2].split("_")[-1])
+
+                # if self.DDMflag == len(self.DDM_pending_videos)-1:
+                #     print("Already look all video!!!")
+                #     self.lock.release()
+                #     return
+                # else:
+                #     self.DDMflag +=1
+                
+
+                # # log every hour
+                # # self.log_database(clip_date, clip_hour)
+
+
+                # ## if the video is new coming, mkdir and mv it to stored folder
+                # clip_path = r['name'].split("/")
+                # new_path = os.path.join(self.storage_dir,clip_path[-2])
+                # if not os.path.isdir(new_path):
+                #     os.mkdir(new_path) 
+                # stored_clip_name = os.path.join(new_path,clip_path[-1])
+                # if not os.path.isfile(stored_clip_name):
+                #     cmd = "cp %s %s"%(r['name'], stored_clip_name)
+                #     os.system(cmd)
+                
+
+                # Save and log the new videos in the database
+                for c in list(result.get_points(measurement="raw_11_"+str(i))):
+                    raw_size = os.path.getsize(c['name']) / pow(2,20)
+                    parse =  c['name'].split('/')[-1].split('_')
+                    date = parse[-2].split("-")
+                    hour = int(parse[-1].split("-")[0])
+                    
+                    json_body.append(
+                        {
+                            "measurement": "pending_video",
+                            "tags": {
+                                "month": int(date[1]),
+                                "day": int(date[2]),
+                                "hour": int(hour),
+                                "prev_fps":int(24),
+                                "prev_bitrate":int(1000),
+                                "fps": int(1),
+                                "bitrate": int(10),
+                                "a_para_illegal_parking": int(1),
+                                "a_para_people_counting": int(1),
+                                
+                            },
+                            "fields": {
+                                "name": str(c['name']),
+                                "raw_size":float(raw_size)
+                            }
+                        }
+                    )
+                    
+            self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=1000, protocol='json')
+            
+                # sumsize = sum(f.stat().st_size for f in Path(self.storage_dir).glob('**/*') if f.is_file())
+                # sumsize = sumsize/pow(2,20)
+                # if sumsize > self.DDM_size_threshold:
+                #     print(sumsize,self.DDM_size_threshold)
+                #     print("Out of size at %s, trigger prob2..."%(r['name']))
+                #     break
+
+                ## Get the pending video for downsampling from databases 'stored_month_day'
+
+
+            
+            self.lock.release()
+            self.conn_send2DDM.send(True)
+>>>>>>> 42cc2248a98fa67668ca59a4e89187610d06e7f5
             print("Send signal to DDM")
         except Exception as e:
             print(e)

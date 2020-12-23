@@ -4,103 +4,30 @@ import numpy as np
 import time
 from conv import SimpleConv
 from entropy import conv_entropy
-
-# def crnn(tensor, kernel_size, stride, out_channels, rnn_n_layers, rnn_type, bidirectional, padding):
-#     # Expand to have 4 dimensions if needed
-#     if len(tensor.shape) == 3:
-#         tensor = tf.expand_dims(tensor, 3)
-
-#     # Extract the patches (returns [batch, time-steps, 1, patch content flattened])
-#     batch_size = tensor.shape[0]
-#     n_in_features = tensor.shape[2]
-#     patches = tf.image.extract_patches(images=tensor, 
-#                              sizes=[1, kernel_size, n_in_features, 1], 
-#                              strides=[1, stride, n_in_features, 1], 
-#                              rates=[1, 1, 1, 1], 
-#                              padding=padding)
-    
-#     patches = patches[:, :, 0, :]
-    
-
-#     # Reshape to do: 
-#     # 1) reshape the flattened patches back to [kernel_size, n_in_features]
-#     # 2) combine the batch and time-steps dimensions (which will be the new 'batch' size, for the RNN)
-#     # now shape will be [batch * time-steps, kernel_size, n_features]
-#     time_steps_after_stride = patches.shape[1]
-#     patches = tf.reshape(patches, [batch_size * time_steps_after_stride, kernel_size, n_in_features])
-    
-
-#     # Transpose and convert to a list, to fit the tf.contrib.rnn.static_rnn requirements
-#     # Now will be a list of length kernel_size, each element of shape [batch * time-steps, n_features]
-#     patches = tf.transpose(patches, [1, 0, 2])
-
-
-#     # Create the RNN Cell
-#     if rnn_type == 'simple':
-#         rnn_cell = tf.keras.layers.SimpleRNNCell
-#     elif rnn_type == 'lstm':
-#         rnn_cell = tf.keras.layers.LSTMCell
-#     elif rnn_type == 'gru':
-#         rnn_cell = tf.keras.layers.GRUCell
-
-#     rnn_cell_func = rnn_cell(out_channels)
-    
-#     if not bidirectional:
-#         layer = tf.keras.layers.RNN(rnn_cell_func, return_sequences=True, go_backwards=False)
-#         outputs = layer(patches)
-#     else:
-#         forward_layer = tf.keras.layers.RNN(rnn_cell_func, return_sequences=True, return_state=False,go_backwards=False)
-#         backward_layer = tf.keras.layers.RNN(rnn_cell_func, return_sequences=True, return_state=False,go_backwards=True)
-#         layer = tf.keras.layers.Bidirectional(forward_layer, backward_layer=backward_layer)
-#         outputs = layer(patches)
-    
-# #     # Multilayer RNN? (does not appear in the original paper)
-# #     if rnn_n_layers > 1:
-# #         if not bidirectional:
-# #             rnn_cell = tf.compat.v1.nn.rnn_cell.MultiRNNCell([rnn_cell] * rnn_n_layers)
-# #         else:
-# #             rnn_cell_f = tf.compat.v1.nn.rnn_cell.MultiRNNCell([rnn_cell_f] * rnn_n_layers)
-# #             rnn_cell_b = tf.compat.v1.nn.rnn_cell.MultiRNNCell([rnn_cell_b] * rnn_n_layers)
-    
-
-
-#     # Use only the output of the last time-step (shape will be [batch * time-steps, out_channels]).
-#     # In the case of a bidirectional RNN, we want to take the last time-step of the forward RNN, 
-#     # and the first time-step of the backward RNN. 
-#     if not bidirectional:
-#         outputs = outputs[-1]
-#     else:
-#         half = int(outputs[0].shape.as_list()[-1] / 2)
-#         outputs = tf.concat([outputs[-1][:,:half], 
-#                            outputs[0][:,half:]], 
-#                           axis=1)
-
-#     # Expand the batch * time-steps back (shape will be [batch_size, time_steps, out_channels]
-#     if bidirectional:
-#         out_channels = 2 * out_channels
-#     outputs = tf.reshape(outputs, [batch_size, time_steps_after_stride, out_channels])
-    
-#     return outputs
-
-
 gpus = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_virtual_device_configuration(
-    gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+tf.config.experimental.set_virtual_device_configuration(gpus[0], [
+  tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)
+])
 
 simpleConv = SimpleConv()
-def get_temp_conv_entropy(input_file, return_value):
+def get_temp_conv_entropy(input_file, shot_list, return_value):
+    
     cap = cv2.VideoCapture(input_file)
     frame_count=0
     frame_sequence = []
     sample_frame_count = 0
     total_entropy = 0
+    shot_list_idx = 0
+
     while True:
         ret, frame = cap.read()
         if ret is False:
             break
+        if frame_count > shot_list[shot_list_idx][1]: 
+            shot_list_idx+=1
 
         frame = tf.image.resize(frame, [512,512], method='bilinear')/255.0
-        if frame_count%24==0:
+        if frame_count%24==0 and shot_list[shot_list_idx][0] == 1:
             if sample_frame_count == 5:
                 frame_sequence_tensor = np.stack(frame_sequence, axis=0)
                 temp_conv_feature = simpleConv(frame_sequence_tensor)
@@ -112,8 +39,12 @@ def get_temp_conv_entropy(input_file, return_value):
             else:
                 frame_sequence.append(frame) 
                 sample_frame_count += 1 
-
+            print(frame_count)
+        if frame_count>=5094:
+            break
+        
         frame_count += 1
+        
     return_value.value = total_entropy
 
 # if __name__=="__main__":

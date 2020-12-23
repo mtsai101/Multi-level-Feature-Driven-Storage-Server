@@ -1,8 +1,7 @@
-
 from multiprocessing import Process
+from virtual_db_agent import DB_agent
 import os
 import time
-from virtual_db_agent import DB_agent
 import threading
 
 if __name__=='__main__':

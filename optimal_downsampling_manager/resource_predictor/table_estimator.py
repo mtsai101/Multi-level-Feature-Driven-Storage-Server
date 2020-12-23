@@ -1,10 +1,10 @@
 from influxdb import InfluxDBClient
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
-
 import datetime
 import pandas as pd
 import numpy as np
 import time
+import yaml
+
 ANALY_LIST=['illegal_parking0','people_counting']
 DOWN_LIST=['temporal','bitrate','qp']
 
@@ -17,6 +17,11 @@ for f in pre_frame_rate:
         pre_d_selected.append([f,b])
 pre_d_selected=np.array(pre_d_selected) 
 
+
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
+DBclient = InfluxDBClient(data['global']['database_ip'], 8087, 'root', 'root', 'storage')
 
 
 class Table:

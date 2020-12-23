@@ -14,7 +14,7 @@ import random
 import numpy
 import math
 import csv
-
+import yaml
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 delta_d = 3600*6 
@@ -40,24 +40,32 @@ week=[
     [0 for i in range(12)]
 ]
 
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
+DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
 
 # this generator will conduct information amount estimation algorithm and generate S
 def generate_P(P_type='', clip_list=[]):
 
-    target_clip_num = clip_array.shape[0]
-    target_deadline = delta_d
-    target_space = int(V)
+    # target_clip_num = clip_array.shape[0]
+    # target_deadline = delta_d
+    # target_space = int(V)
 
     space_experiment = Path("./storage_server_volume/storage_video")
+
     if P_type=='None':
         P_list=[]
+        
         for c in clip_list:
             d = Decision(
-                        clip_name=c['name'], fps=12.0, bitrate=500.0, 
-                        prev_fps = c['prev_fps'], prev_bitrate = c['prev_bitrate'],  
-                        others=[c['a_para_illegal_parking'], c['a_para_people_counting'], c['raw_size']]
-                    )
+                        clip_name=c['name'], 
+                        prev_fps = int(c['prev_fps']), 
+                        prev_bitrate = int(c['prev_bitrate']),
+                        fps=int(c['fps']),
+                        bitrate=int(c['bitrate']),
+                        others=[int(c['a_para_illegal_parking']),int(c['a_para_people_counting']),float(c['raw_size'])]
+                )
             P_list.append(d)
 
         return P_list

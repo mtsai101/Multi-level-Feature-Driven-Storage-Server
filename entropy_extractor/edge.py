@@ -68,7 +68,6 @@ def get_edge_entropy(input_file, shot_list, return_value):
     total_entropy = 0
     frame_count = 0
     shot_list_idx = 0
-
     while True:
         ret, frame = vs.read()
         if ret is False:
@@ -79,14 +78,14 @@ def get_edge_entropy(input_file, shot_list, return_value):
         if frame_count%24==0 and shot_list[shot_list_idx][0] == 1:
             descriptor = edgeHistogramComputer.compute(frame)
             total_entropy += edge_entropy(descriptor)
-            break    
+
         frame_count += 1
         
     return_value.value = total_entropy
 
-if __name__=="__main__":
-    input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
-    s = time.time()
-    total_entropy = get_edge_entropy(input_file)
-    print(time.time()-s)
-    print(total_entropy)
+# if __name__=="__main__":
+#     input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
+#     s = time.time()
+#     total_entropy = get_edge_entropy(input_file)
+#     print(time.time()-s)
+#     print(total_entropy)

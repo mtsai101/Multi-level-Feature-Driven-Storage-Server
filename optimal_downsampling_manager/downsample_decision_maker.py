@@ -10,7 +10,6 @@ import time
 import math
 import yaml
 
-
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
@@ -20,8 +19,7 @@ class DownSampleDecisionMaker(object):
         self.conn_listenDBAgent = None
 
         self.ready = threading.Event()
-        
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
         self.DBAlistener = Listener(('localhost',int(data['global']['agent2DDM'])))
 
 
@@ -45,7 +43,7 @@ class DownSampleDecisionMaker(object):
             time.sleep(1)
             try:
                 if self.conn_send2DP is None:
-                    address = ('localhost',int(data['global']['DDM2DP'])
+                    address = ('localhost',int(data['global']['DDM2DP']))
                     self.conn_send2DP = Client(address)
                     print("Connected with Down Platform")
             except Exception as e:
@@ -73,7 +71,7 @@ class DownSampleDecisionMaker(object):
 
     # close connection
     def close(self):
-        #self.conn2DP.close()
+        self.conn_send2DP.close()
         
         return
 
@@ -81,20 +79,20 @@ class DownSampleDecisionMaker(object):
     # @setInterval(36000)
     def do(self):
         while True:
-            invoke_time = self.conn_listenDBAgent.recv()
+            self.conn_listenDBAgent.recv()
             print("Generating P from workload generator")
-            result = self.DBclient.query('SELECT * from pending_videos')
-            clip_list = list(result.get_points(measurement='pending_videos'))
+            result = self.DBclient.query('SELECT * from pending_video')
+            clip_list = list(result.get_points(measurement='pending_video'))
             
 
             if len(clip_list) > 0:
-                self.process_pending(clip_list)
+                P_list = self.process_pending(clip_list)
             else:
                 print("Can't find any pending videos")
 
             # send clip_list to Analytics
-            self.conn_send2DP.send([P_list, invoke_time])
-            print("Keep listening for the next batch of clips from VC")
+            self.conn_send2DP.send(P_list)
+            print("Keep listening for the next batch of clips from DBA")
 
     def process_pending(self,clip_list):
         process_num = 1 # needs to less than total number of CPU cores
@@ -104,6 +102,9 @@ class DownSampleDecisionMaker(object):
         print("[INFO] sending P_decision")
 
         
+        # take away pending videos, so drop it
+        self.DBclient.query("DROP MEASUREMENT pending_video")
+        return P_list
         
 
 

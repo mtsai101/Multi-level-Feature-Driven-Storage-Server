@@ -15,8 +15,9 @@ global:
     - 500.0 
     - 100.0
     - 10.0
-
-  database: 8087 
+  database_ip: '172.17.0.2'
+  database: 8086
+  
   # camera2SLE: 5000
   # SLE2AP: 7000
   # SLE2camera: 6000
@@ -41,9 +42,9 @@ global:
   # DDM2DP: 7005
   # DP2agent: 6005
 
-  camera2SLE: 5006
-  SLE2AP: 7006
-  SLE2camera: 6006
+  # camera2SLE: 5006
+  # SLE2AP: 7006
+  # SLE2camera: 6006
 
   # agent2DDM: 5007
   # DDM2DP: 7007
@@ -56,6 +57,37 @@ global:
   # agent2DDM: 5009
   # DDM2DP: 7009
   # DP2agent: 6009
+
+  # agent2DDM: 5011
+  # DDM2DP: 7011
+  # DP2agent: 6011
+
+
+  # agent2DDM: 5013
+  # DDM2DP: 7013
+  # DP2agent: 6013
+
+  # agent2DDM: 5015
+  # DDM2DP: 7015
+  # DP2agent: 6015
+
+
+  # agent2DDM: 5017
+  # DDM2DP: 7017
+  # DP2agent: 6017
+
+
+  # agent2DDM: 5019
+  # DDM2DP: 7019
+  # DP2agent: 6019
+
+  # agent2DDM: 5021
+  # DDM2DP: 7021
+  # DP2agent: 6021
+
+  agent2DDM: 5023
+  DDM2DP: 7023
+  DP2agent: 6023
 
 dispatcher:
   SLE_trigger_time: 6 # hour 
@@ -71,7 +103,7 @@ SLE:
   delta_i: 300
 
 DDM:
-  algo: FIFO
+  algo: None
 
 # analytics:
 

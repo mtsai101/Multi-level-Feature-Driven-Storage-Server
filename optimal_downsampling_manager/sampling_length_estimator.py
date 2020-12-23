@@ -20,12 +20,10 @@ trigger_Interval = 6
 class SamplingLengthEstimator(object):
     def __init__(self):
         self.conn_listenVirtualCamera = None      
-
-
         self.conn_send2Analytic = None
         self.ready = threading.Event()
     
-        self.DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
         self.VClistener = Listener(('localhost',int(data['global']['camera2SLE'])))
     
 

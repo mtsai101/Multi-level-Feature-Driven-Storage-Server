@@ -1,36 +1,41 @@
 from influxdb import InfluxDBClient
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
-
 # from optimal_downsampling_manager.resource_predictor.table_estimator import AnalyTimeTable, DownTimeTable, DownRatioTable, IATable
 import os
 import csv
 import ast
+import yaml
+
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
+DBclient = InfluxDBClient('172.17.0.2', data['global']['database'], 'root', 'root', 'storage')
+
 if __name__=='__main__':
     
     # init raw video database
-    # for i in range(10,16):
-    #     base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
-    #     video_li = os.listdir(base_dir)
-    #     video_li = sorted(video_li, key= lambda x: x)
-    #     for v in video_li:
-    #         v_path = os.path.join(base_dir,v)
+    for i in range(10,16):
+        base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
+        video_li = os.listdir(base_dir)
+        video_li = sorted(video_li, key= lambda x: x)
+        for v in video_li:
+            v_path = os.path.join(base_dir,v)
             
-    #         if os.path.isdir(v_path):
-    #             continue
-    #         json_body = [
-    #                             {
-    #                                 "measurement": "raw_11_"+str(i),
-    #                                 "tags": {
-    #                                     "name": str(v_path)
+            if os.path.isdir(v_path):
+                continue
+            json_body = [
+                                {
+                                    "measurement": "raw_11_"+str(i),
+                                    "tags": {
+                                        "name": str(v_path)
                                         
-    #                                 },
-    #                                 "fields": {
-    #                                     "host": "webcamPole1"
-    #                                 }
-    #                             }
-    #                         ]
+                                    },
+                                    "fields": {
+                                        "host": "webcamPole1"
+                                    }
+                                }
+                            ]
             
-    #         DBclient.write_points(json_body)
+            DBclient.write_points(json_body)
 
     # init analy result
     # json_body = [
@@ -130,22 +135,70 @@ if __name__=='__main__':
     #             ]
     #     DBclient.write_points(json_body)
 
-    json_body=[]
-    for f in range(1,685):
-        #save info_amount by type
-        json_body.append(
-            {
-                "measurement": "test",
-                "tags": {
-                    "name": str(f)+"rrr",
+    ## Pressure test...
+    # json_body = []
+    # import time 
+    # day = 0
+    # hour = 0
+    # frame_id = 0
+    # for f in range(850*24):
+
+    #     ## save info_amount by type
+    #     json_body.append(
+    #         {
+    #             "measurement": "insertTest",
+    #             "tags": {
+    #                 "name": "path_"+str(day)+str(hour),
+    #                 "hour": int(hour),
+    #                 "idx": int(frame_id)
+    #             },
+    #             "fields": {
                     
-                },
-                "fields": {
-                    "frame_idx": int(f),
-                    
-                }
-            }
-        )
-    print(len(json_body))
-    DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+    #                 "value":str(f)+"hello"
+    #             }
+    #         }
+    #     )
+    #     frame_id += 1
+    #     if frame_id==850:
+    #         hour = hour+1
+    #         frame_id = 0
+    #         if hour==24:
+    #             hour = 0
+    #             day +=1
+
+
+    # s = time.time()
+    # DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=80000, protocol='json')
+    # print("%.2f"%(time.time()-s))
+
+    # result = DBclient.query("SELECT * FROM analy_result_raw_per_frame_inshot_4_9")
+    # result_list = list(result.get_points(measurement='analy_result_raw_per_frame_inshot_4_9'))
+
+    # back_DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
+
+    # json_body=[] 
+    # for f in result_list:
+        
+    #     if f['name'].split('/')[-2]=="2020-11-04_00-00-00":
+    #         ## save info_amount by type
+    #         json_body = [
+    #             {
+    #                 "measurement": "analy_result_raw_per_frame_inshot_11_4",
+    #                 "tags": {
+    #                     "name": str(f['name']),
+    #                     "a_type": str(f['a_type']),
+    #                     "day_of_week":int(f['day_of_week']),
+    #                     "time_of_day":int(f['time_of_day']),
+    #                 },
+    #                 "fields": {
+    #                     "frame_idx": int(f['frame_idx']),
+    #                     "a_parameter": float(f['a_parameter']),
+    #                     "fps": float(f['fps']),
+    #                     "bitrate": float(f['bitrate']),
+    #                     "time_consumption": float(f['time_consumption']),
+    #                     "target": int(f['target'])
+    #                 }
+    #             }
+    #         ]
+    #         back_DBclient.write_points(json_body)
 

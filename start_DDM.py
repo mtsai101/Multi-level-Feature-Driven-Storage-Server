@@ -2,8 +2,6 @@ import os
 from multiprocessing import Process
 from optimal_downsampling_manager.downsample_decision_maker import DownSampleDecisionMaker
 import threading 
-
-
 import time
 
 if __name__ == '__main__':
