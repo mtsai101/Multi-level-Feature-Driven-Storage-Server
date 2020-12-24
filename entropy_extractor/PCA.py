@@ -4,7 +4,7 @@ from influxdb import InfluxDBClient
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 max_ = 0
 min_ = 0
 
