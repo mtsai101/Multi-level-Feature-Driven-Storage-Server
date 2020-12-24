@@ -9,7 +9,7 @@ import sys
 ANALY_LIST=['illegal_parking0','people_counting']
 DOWN_LIST=['temporal','bitrate','qp']
 
-pre_a_selected=[1,24,48,96,144]
+pre_a_selected=[24,48,96,144]
 
 pre_d_selected = [(24,1000),(24,500),(12,500),(12,100),(6,100),(6,10),(1,10)]
 
@@ -60,7 +60,7 @@ class Table:
 
     def make_query(self, day_idx, time_idx, a_type, a_parameter, fps, bitrate):
 
-        if self.model_type == 'Full_IA': #\hat{e}(c,a,f_c)
+        if self.model_type == 'Full_IATable': #\hat{e}(c,a,f_c)
             result_list = []; 
             for d in range(self.start_day,self.end_day):
                 table_name = 'analy_complete_result_inshot_11_'+str(d)
@@ -68,12 +68,13 @@ class Table:
                 try:
                     result = DBclient.query('SELECT \"name\", target/total_frame_number FROM '+ table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\'')
                     result_list.extend(list(result.get_points(measurement = table_name)))
+
                 except:
                     print("Miss some 11_"+str(d)+" time_idx:", time_idx, "a_type:", a_type," but whatever...")
                     continue
 
             if len(result_list)>0:
-                sorted_list = sorted(result_list, key=lambda k :k['name'])
+                sorted_list = sorted(result_list, key=lambda k :k['name'], reverse=True)
                 # print(sum(sorted_list[:]['target_total_frame_number']))
                 if len(sorted_list) > self.window_size:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size
@@ -83,13 +84,56 @@ class Table:
             else:
                 return 0
 
-        elif self.model_type == '':
+        elif self.model_type == 'degraded_IATable':
+            sample_result_list=[]; full_result_list=[]
+            for d in range(self.start_day,self.end_day):
+                full_table_name = 'analy_complete_result_inshot_11_'+str(d)
+                sample_table_name = 'analy_sample_result_inshot_11_'+str(d)
+                try:
+                    sample_result = DBclient.query('SELECT \"name\", target FROM '+ sample_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\' AND \"a_parameter\"=\''+str(a_parameter)+'\'')
+                    sample_result_list.extend(list(sample_result.get_points(measurement = sample_table_name)))
+                    full_result = DBclient.query('SELECT \"name\", target FROM '+ full_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\'')
+                    full_result_list.extend(list(full_result.get_points(measurement = full_table_name)))
+                    if len(sample_result) != len(full_result):
+                        print("not found enough sample_result_list on", sample_table_name, "")
+                except:
+                    continue
+
+            if len(sample_result_list)>0 and len(full_result_list)>0:
+                result_value=0
+                full_sorted_list = sorted(full_result_list, key=lambda k :k['name'], reverse=True)
+                sample_sorted_list = sorted(sample_result_list, key=lambda k :k['name'], reverse=True)
             
+                length = min(len(full_sorted_list), self.window_size)
+                for i in range(length):
+                    if full_sorted_list[i]['target'] and sample_sorted_list[i]['target']:
+                        result_value += sample_sorted_list[i]['target']/full_sorted_list[i]['target']
+                return result_value/length
+            else:
+                return 0
+
         elif self.model_type == 'AnalyTime':
-            target_col = 'time_consumption'
-            # For t(c,a,l)
-            result = DBclient.query('SELECT * FROM '+self.table_name+' WHERE \"a_type\"=\'' + a_type + '\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx) + '\' AND a_parameter='+str(a_parameter) +' ORDER BY time DESC LIMIT ' + str(self.window_size))
-            estimation_point = pd.DataFrame(result.get_points(measurement=self.table_name))
+            result_list = []; 
+            for d in range(self.start_day, self.end_day):
+                table_name = "analy_complete_result_inshot_11_" +str(d)  # For t(c,a)
+                result = DBclient.query('SELECT \"name\", total_frame_number, time_consumption/total_frame_number FROM '+table_name+' WHERE \"a_type\"=\'' + a_type + '\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\'')
+                result_list.extend(list(result.get_points(measurement = table_name)))
+
+            if len(result_list)>0:
+                sorted_list = sorted(result_list, key=lambda k :k['name'], reverse=True)
+                # print(sum(sorted_list[:]['target_total_frame_number']))
+                if len(sorted_list) > self.window_size:
+                    result_value = sum(item['time_consumption_total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size
+                    # print("total frame:",sum(item['total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size)
+
+                else:
+                    result_value = sum(item['time_consumption_total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
+                    # print(sum(item['total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list))
+
+                return result_value
+            else:
+                return 0
+
         elif self.model_type == 'DownTime':
             target_col = 'time_consumption'
             ## if fps and bitrate equal to default, return time = 0 (no downsample)
@@ -119,47 +163,36 @@ class Table:
     
 class AnalyTimeTable(Table):
     def __init__(self,refresh):
-        super().__init__('analy_result')
+        super().__init__('')
         self.model_type='AnalyTime'
         self.refresh = refresh
         if self.refresh:
             print("[INFO] Updating the AnalyTimeTable models...")
-
             drop_measurement_if_exist("AnalyTimeTable")
-
             for day_idx in range(2):
-                for time_idx in range(12):
+                for time_idx in range(24):
                     for a_type in ANALY_LIST:
-                        for a_parameter in pre_a_selected:
-                            value = self.get_latest_value(day_idx, time_idx, a_type=a_type, a_parameter=a_parameter)
-                            json_body = [
-                                    {
-                                        "measurement":self.model_type + 'Table',
-                                        "tags": {
-                                            "name": self.model_type,
-                                            "a_type":a_type,
-                                            "a_parameter":float(a_parameter),
-                                            "day_of_week":day_idx,
-                                            "time_of_day":time_idx
-                                        },
-                                        "fields": {
-                                            "value":value
-                                        }
+                        # print("day_idx:", day_idx," time_idx",time_idx," a_type:", a_type)
+                        value = self.get_latest_value(day_idx, time_idx, a_type=a_type)
+                        # print("value", value)
+                        json_body = [
+                                {
+                                    "measurement":self.model_type + 'Table',
+                                    "tags": {
+                                        "name": self.model_type,
+                                        "a_type":a_type,
+                                        "day_of_week":day_idx,
+                                        "time_of_day":time_idx
+                                    },
+                                    "fields": {
+                                        "value":value
                                     }
-                                ]
+                                }
+                            ]
 
-                            DBclient.write_points(json_body)
+                        DBclient.write_points(json_body)
             print("[INFO] Updating completed!")
-        else:
-            result = DBclient.query('SELECT * FROM AnalyTimeTable')
-            result_point = list(result.get_points(measurement='AnalyTimeTable'))
 
-            self.table = np.zeros(len(result_point), dtype = np.float32)
-
-            for k,i in enumerate(result_point):
-                self.table[k] =  i["value"]
-
-            self.table = self.table.reshape((2,12,2,len(pre_a_selected)))
 
     def get_estimation(self,day_of_week=0,time_of_day=0,a_type=-1,a_parameter=-1):
         return self.table[day_of_week][time_of_day][a_type][a_parameter]
@@ -175,7 +208,7 @@ class DownTimeTable(Table):
             drop_measurement_if_exist("DownTimeTable")
 
             for day_idx in range(2):
-                for time_idx in range(12):
+                for time_idx in range(24):
                     for d_parameter in pre_d_selected:
                         value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
                         json_body = [
@@ -222,7 +255,7 @@ class DownRatioTable(Table):
             print("[INFO] Updating the DownRatioTable models...")
             drop_measurement_if_exist("DownRatioTable")
             for day_idx in range(2):
-                for time_idx in range(12):
+                for time_idx in range(24):
                     for d_parameter in pre_d_selected:
                         value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
                         json_body = [
@@ -261,39 +294,28 @@ class DownRatioTable(Table):
         else:
             return self.table[day_of_week][time_of_day][p_id]
 
-class degraded_IATable(Table):
+class Degraded_IATable(Table):
     def __init__(self,refresh):
         super().__init__('')
 
         self.model_type='degraded_IATable'
         self.refresh = refresh
         if self.refresh:
-            for d in range(self.start_day, self.end_day):
-                building_table_name = 'analy_complete_result_inshot_11_'+str(d)
-                for a_type in ANALY_LIST:
-
-                    max_result = DBclient.query('SELECT target/total_frame_number AS info FROM ' + building_table_name + ' WHERE \"a_type\"=\''+a_type+'\'')
-                    max_result = list(max_result.get_points(measurement = building_table_name))
-                    max_value = sorted(max_result, key=lambda k :k['info'],reverse=True)[0]['info']
-
-                    self.max_info[a_type] = max(self.max_info[a_type], max_value)
-
             ## influxdb can not update, only we can do is deleting the previous one
-            print("[INFO] Updating the IATable models...")
-            drop_measurement_if_exist("IAPredTable")
+            print("[INFO] Updating the Degraded_IATable models...")
+            drop_measurement_if_exist("Degraded_IATable")
             for day_idx in range(2):
-                for time_idx in range(12):
+                for time_idx in range(24):
                     for a_type in ANALY_LIST:
                         for a_parameter in pre_a_selected:
-                            value = self.get_latest_value(day_idx, time_idx, a_type=a_type)
-                            print("day_idx:", day_idx," time_idx",time_idx," a_type:", a_type," value:", value)
+                            value = self.get_latest_value(day_idx, time_idx, a_type=a_type, a_parameter = a_parameter)
                             json_body = [
                                     {
-                                        "measurement":self.model_type + 'PredTable',
+                                        "measurement":self.model_type,
                                         "tags": {
                                             "name": self.model_type,
                                             "a_type":a_type,
-                                            "a_param":,
+                                            "a_param":a_parameter,
                                             "day_of_week":day_idx,
                                             "time_of_day":time_idx,
                                         },
@@ -303,31 +325,15 @@ class degraded_IATable(Table):
                                     }
                                 ]
                             DBclient.write_points(json_body)
-                        
             print("[INFO] Updating completed!")
         
-        # result = DBclient.query('SELECT * FROM IAPredTable')
-        # result_point = list(result.get_points(measurement='IAPredTable'))
-        # self.table = np.zeros(len(result_point), dtype = np.float32)
-
-        # for k,i in enumerate(result_point):
-        #     self.table[k] =  i["value"]
-
-        # self.table = self.table.reshape((2,12,len(ANALY_LIST),len(pre_a_selected)+len(pre_d_selected)))
-        
-
-    def get_estimation(self,day_of_week=0,time_of_day=0,a_type=-1,a_parameter=-1, p_id=-1):
-        if p_id==-1:
-            return self.table[day_of_week][time_of_day][a_type][a_parameter]
-        else:
-            return self.table[day_of_week][time_of_day][a_type][len(pre_a_selected)+p_id]
 
         
 class Full_IATable(Table):
     def __init__(self,refresh):
         super().__init__('')
 
-        self.model_type='Full_IA'
+        self.model_type='Full_IATable'
         self.max_info={"illegal_parking0":0, "people_counting":0}
         self.refresh = refresh
          
@@ -344,16 +350,15 @@ class Full_IATable(Table):
                     self.max_info[a_type] = max(self.max_info[a_type], max_value)
 
             ## influxdb can not update, only we can do is deleting the previous one
-            print("[INFO] Updating the IATable models...")
-            drop_measurement_if_exist("IAPredTable")
+            print("[INFO] Updating the Full_IATable models...")
+            drop_measurement_if_exist("Full_IATable")
             for day_idx in range(2):
-                for time_idx in range(12):
+                for time_idx in range(24):
                     for a_type in ANALY_LIST:
                         value = self.get_latest_value(day_idx, time_idx, a_type=a_type)
-                        print("day_idx:", day_idx," time_idx",time_idx," a_type:", a_type," value:", value)
                         json_body = [
                                 {
-                                    "measurement":self.model_type + 'PredTable',
+                                    "measurement":self.model_type,
                                     "tags": {
                                         "name": self.model_type,
                                         "a_type":a_type,

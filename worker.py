@@ -1,6 +1,6 @@
 from influxdb import InfluxDBClient
 import pandas as pd
-from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable
+from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable
 DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 import csv
 import ast 
@@ -53,83 +53,85 @@ if __name__=='__main__':
     # DBclient.write(json.dumps(result_list), params={"database":'test', "measurement":'video_in_server'}, protocol='json')
     # print(json.dumps(result_list))
 
-    # full_IATable = Full_IATable(True)
+    full_IATable = Full_IATable(True)
+    degraded_IATable = Degraded_IATable(True)
+    analyTimeTable = AnalyTimeTable(True)
     
 
 
     ## build degrade table
-    sample_length_list = [24,48,96,144]
+    # sample_length_list = [24,48,96,144]
     
 
-    a_type_list = ['illegal_parking0','people_counting']
-    for day in range(6,16):
-        name = "raw_11_"+str(day)
-        result = DBclient.query("SELECT * FROM "+name)
-        day_list = list(result.get_points(measurement=name))
-        for day_all in day_list:
-            path = day_all['name']
+    # a_type_list = ['illegal_parking0','people_counting']
+    # for day in range(4,16):
+    #     name = "raw_11_"+str(day)
+    #     result = DBclient.query("SELECT * FROM "+name)
+    #     day_list = list(result.get_points(measurement=name))
 
-            print("querying shot")    
-            result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+path+"\'")
-            shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
+    #     for day_all in day_list:
+    #         path = day_all['name']
+    #         day_idx, time_idx = get_context(path)
+    #         print("querying shot")    
+    #         result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+path+"\'")
+    #         shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
 
-            for a_type in a_type_list:
-                print("querying frame")
+    #         for a_type in a_type_list:
+    #             print("querying frame")
                 
-                each_frame_result = DBclient.query("SELECT * FROM analy_result_raw_per_frame_inshot_11_"+str(day)+" where \"name\"=\'"+path+"\' AND \"a_type\"=\'"+a_type+"\'")
-                each_frame_result = list(each_frame_result.get_points(measurement = "analy_result_raw_per_frame_inshot_11_"+str(day)))
-                if len(each_frame_result)==0:
-                    continue
-                day_idx = each_frame_result[0]['day_of_week']; time_idx = each_frame_result[0]['time_of_day']; fps = each_frame_result[0]['fps']; bitrate = each_frame_result[0]['bitrate']
-                print("finish querying")
-                print("start to sorting")
-                sorted_frame_result = sorted(each_frame_result, key=lambda k :int(k['frame_idx']))
+    #             each_frame_result = DBclient.query("SELECT * FROM analy_result_raw_per_frame_inshot_11_"+str(day)+" where \"name\"=\'"+path+"\' AND \"a_type\"=\'"+a_type+"\'")
+    #             each_frame_result = list(each_frame_result.get_points(measurement = "analy_result_raw_per_frame_inshot_11_"+str(day)))
+                
+    #             fps = 24; bitrate = 1000
+    #             print("finish querying")
+    #             print("start to sorting")
+    #             sorted_frame_result = sorted(each_frame_result, key=lambda k :int(k['frame_idx']))
 
-                for sample_length in sample_length_list:
-                    frame_counter = 0
-                    sample_buf = sample_length
-                    target_counter = 0
-                    total_time_consumption = 0
-                    total_frame_num = 0
-                    print("start to capture")
-                    print("There are ",len(sorted_frame_result)," frames in ", path)
+    #             for sample_length in sample_length_list:
+    #                 frame_counter = 0
+    #                 sample_buf = sample_length
+    #                 target_counter = 0
+    #                 total_time_consumption = 0
+    #                 total_frame_num = 0
+    #                 print("start to capture")
+    #                 print("There are ",len(sorted_frame_result)," frames in ", path)
 
-                    for frame in sorted_frame_result:
-                        # print(frame['frame_idx'])
-                        sample_buf -= 1
-                        if sample_buf>0:
-                            continue
-                        else:
-                            sample_buf = sample_length
+    #                 for frame in sorted_frame_result:
+    #                     # print(frame['frame_idx'])
+    #                     sample_buf -= 1
+    #                     if sample_buf>0:
+    #                         continue
+    #                     else:
+    #                         sample_buf = sample_length
                         
-                        target_counter += frame['target']
-                        total_frame_num += 1
-                        total_time_consumption += frame['time_consumption']
+    #                     target_counter += frame['target']
+    #                     total_frame_num += 1
+    #                     total_time_consumption += frame['time_consumption']
 
-                    print("start save to db")
+    #                 print("start save to db")
 
 
-                    json_body=[
-                            {
-                                "measurement": "analy_sample_result_inshot_11_"+str(day),
-                                    "tags": {
-                                        "a_type": str(a_type),
-                                        "day_of_week":int(day_idx),
-                                        "time_of_day":int(time_idx),
-                                        "a_parameter": int(sample_length), 
-                                        "fps": int(fps),
-                                        "bitrate": int(bitrate)
-                                    },
-                                    "fields": {
-                                        "total_frame_number":int(total_frame_num),
-                                        "name": str(path),
-                                        "time_consumption": float(total_time_consumption),
-                                        "target": int(target_counter)
-                                    }
-                            }
-                    ]
-                    DBclient.write_points(json_body)
-                    print("Finish "+str(path)+" at sample length = "+str(sample_length) +"on "+a_type)
+    #                 json_body=[
+    #                         {
+    #                             "measurement": "analy_sample_result_inshot_11_"+str(day),
+    #                                 "tags": {
+    #                                     "a_type": str(a_type),
+    #                                     "day_of_week":int(day_idx),
+    #                                     "time_of_day":int(time_idx),
+    #                                     "a_parameter": int(sample_length), 
+    #                                     "fps": int(fps),
+    #                                     "bitrate": int(bitrate)
+    #                                 },
+    #                                 "fields": {
+    #                                     "total_frame_number":int(total_frame_num),
+    #                                     "name": str(path),
+    #                                     "time_consumption": float(total_time_consumption),
+    #                                     "target": int(target_counter)
+    #                                 }
+    #                         }
+    #                 ]
+    #                 DBclient.write_points(json_body)
+    #                 print("Finish "+str(path)+" at sample length = "+str(sample_length) +"on "+a_type)
                         
                     
 
