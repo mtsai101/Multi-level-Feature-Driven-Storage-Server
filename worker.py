@@ -3,6 +3,7 @@ import pandas as pd
 from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable
 DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 import csv
+import cv2
 import ast 
 
 if __name__=='__main__':
@@ -53,16 +54,14 @@ if __name__=='__main__':
     # DBclient.write(json.dumps(result_list), params={"database":'test', "measurement":'video_in_server'}, protocol='json')
     # print(json.dumps(result_list))
 
-    full_IATable = Full_IATable(True)
-    degraded_IATable = Degraded_IATable(True)
-    analyTimeTable = AnalyTimeTable(True)
+    # full_IATable = Full_IATable(True)
+    # degraded_IATable = Degraded_IATable(True)
+    # analyTimeTable = AnalyTimeTable(True)
     
 
 
-    ## build degrade table
+    ## build degrade L_ia data for degrade L_ia Table
     # sample_length_list = [24,48,96,144]
-    
-
     # a_type_list = ['illegal_parking0','people_counting']
     # for day in range(4,16):
     #     name = "raw_11_"+str(day)
@@ -133,8 +132,9 @@ if __name__=='__main__':
     #                 DBclient.write_points(json_body)
     #                 print("Finish "+str(path)+" at sample length = "+str(sample_length) +"on "+a_type)
                         
-                    
+        
 
-
-                    
-
+    # path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/converted_videos/1-10/2020-11-04_00-00-00/Pole1_2020-11-04_12-00-00.mp4"
+    # path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00/Pole1_2020-11-04_12-00-00.mp4"
+    # cap = cv2.VideoCapture(path)
+    # print(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))

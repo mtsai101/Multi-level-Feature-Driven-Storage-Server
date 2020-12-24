@@ -16,11 +16,16 @@ import pickle
 import random
 import time
 import math
+import yaml
 import sys
 import cv2
 import csv
+import ast
 import os
 
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 class Analyst(object):
     def __init__(self):
@@ -77,9 +82,31 @@ class Analyst(object):
         self.total_frame_num = self.vs.get(cv2.CAP_PROP_FRAME_COUNT)
         self.img_width = int(self.vs.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.img_height = int(self.vs.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.shot_list = L_decision.shot_list
+        
+        
+        self.shot_list =  self.get_shot_list(L_decision)
         self.processing_fps = 0.0
         self.writer = None
+
+    # find the shot start and end position in the sampled quality video
+    def get_shot_list(self, L_decision):
+        if L_decision.fps!=24 and L_decision.bitrate!=1000:
+            sample_video_path_parse = L_decision.clip_name.split('/')
+            unsample_video_path = os.path.join('./storage_server_volume/SmartPole/Pole1', sample_video_path_parse[-2], sample_video_path_parse[-1])
+            cap = cv2.VideoCapture(unsample_video_path); origin_video_frame_num = cap.get(cv2.CAP_PROP_FRAME_COUNT); 
+            cap.release()
+            sampling_frame_ratio = self.total_frame_num/origin_video_frame_num
+
+        else:
+            unsample_video_path = clip['name']
+            sampling_frame_ratio = 1
+
+        result = self.DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+unsample_video_path+"\'")
+        shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
+ 
+        return [[x[0],int(x[1]*sampling_frame_ratio)] for x in shot_list]
+
+
 
     def analyze_save(self,L_decision):
         
@@ -90,7 +117,7 @@ class Analyst(object):
             #save info_amount by type
             json_body = [
                 {
-                    "measurement": "analy_complete_result_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
+                    "measurement": "analy_complete_sample_quality_result_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
                     "tags": {
                         "a_type": str(L_decision.a_type),
                         "day_of_week":int(L_decision.day_idx),
@@ -122,7 +149,7 @@ class Analyst(object):
             ## save info_amount by type
             json_body.append(
                 {
-                    "measurement": "analy_result_raw_per_frame_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
+                    "measurement": "analy_result_sample_quality_frame_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
                     "tags": {
                         "a_type": str(L_decision.a_type),
                         "day_of_week":int(L_decision.day_idx),
@@ -167,8 +194,6 @@ class Analyst(object):
         
         
         start = time.time()
-        chunk = self.total_frame_num/sample_length
-        step = 1 # 1 step for 1 chunk
         sample_buf = sample_length
         while True:
             s_p_frame = time.time()

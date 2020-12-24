@@ -13,9 +13,11 @@ from optimal_downsampling_manager.resource_predictor.table_estimator import get_
 import os
 
 import ast
-
+import yaml
 ANALY_LIST = ["people_counting","illegal_parking0"]
 
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 pre_a_selected=[5.0, 10.0, 25.0, 50.0, 100.0]
 
@@ -42,7 +44,7 @@ def generate_L(L_type='',clip_list=[], process_num=1):
 
     print("Start to generating L...")
     try:
-        if L_type=="FIFO" or L_type == "random": 
+        if L_type=="FIFO": 
             L_list=list()
             """
                 The followings are for build the prediction models
@@ -54,14 +56,17 @@ def generate_L(L_type='',clip_list=[], process_num=1):
             #         L_list.append(decision)
             DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
             for clip in clip_list:
-                result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+clip['name']+"\'")
-                shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
-                if len(shot_list)>0:
-                    # decision = Decision(clip_name=clip['name'],a_type='illegal_parking0', a_parameter=1,fps=24.0,bitrate=1000.0, shot_list=shot_list)
-                    decision = Decision(clip_name=clip['name'],a_type='people_counting', a_parameter=1,fps=24.0,bitrate=1000.0, shot_list=shot_list)
-                    L_list.append(decision)
-                else:
-                    print("no shot list:", clip)
+                # decision = Decision(clip_name=clip['name'],a_type='illegal_parking0', a_parameter=1,fps=24.0,bitrate=1000.0, shot_list=shot_list)
+                decision = Decision(clip_name=clip['name'],
+                            a_type=clip['a_type'], 
+                            a_parameter=int(clip['a_parameter']),
+                            prev_fps=int(clip['prev_fps']), 
+                            prev_bitrate=int(clip['bitrate']), 
+                            fps= int(clip['fps']), 
+                            bitrate=int(clip['bitrate']))
+
+                L_list.append(decision)
+
 
             return L_list
 

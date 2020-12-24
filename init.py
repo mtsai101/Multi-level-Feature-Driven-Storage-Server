@@ -8,34 +8,69 @@ import yaml
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
-DBclient = InfluxDBClient('172.17.0.2', data['global']['database'], 'root', 'root', 'storage')
+DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
 
 if __name__=='__main__':
     
     # init raw video database
-    for i in range(10,16):
-        base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
-        video_li = os.listdir(base_dir)
-        video_li = sorted(video_li, key= lambda x: x)
-        for v in video_li:
-            v_path = os.path.join(base_dir,v)
+    # for i in range(10,16):
+    #     base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
+    #     video_li = os.listdir(base_dir)
+    #     video_li = sorted(video_li, key= lambda x: x)
+    #     for v in video_li:
+    #         v_path = os.path.join(base_dir,v)
             
-            if os.path.isdir(v_path):
-                continue
-            json_body = [
-                                {
-                                    "measurement": "raw_11_"+str(i),
-                                    "tags": {
-                                        "name": str(v_path)
+    #         if os.path.isdir(v_path):
+    #             continue
+    #         json_body = [
+    #                             {
+    #                                 "measurement": "raw_11_"+str(i),
+    #                                 "tags": {
+    #                                     "name": str(v_path)
                                         
-                                    },
-                                    "fields": {
-                                        "host": "webcamPole1"
-                                    }
-                                }
-                            ]
+    #                                 },
+    #                                 "fields": {
+    #                                     "host": "webcamPole1"
+    #                                 }
+    #                             }
+    #                         ]
             
-            DBclient.write_points(json_body)
+    #         DBclient.write_points(json_body)
+
+    ## init sample video database
+
+    # base_dir = "./storage_server_volume/converted_videos/"
+    # quality_dir = os.listdir(base_dir)
+    # for q in quality_dir:
+    #     fps, bitrate = q.split('-')
+    #     quality_li = os.path.join(base_dir,q)
+    #     video_dir = os.listdir(quality_li)
+    #     for video_date in video_dir:
+    #         video_li = os.path.join(quality_li, video_date)
+    #         video_internal_li = os.listdir(video_li)
+    #         video_internal_li = sorted(video_internal_li, key= lambda x: x)
+    #         for v in video_internal_li:
+    #             v_path = os.path.join(video_li,v)
+
+    #             if os.path.isdir(v_path):
+    #                 continue
+    #             date =  v_path.split('/')[-2].split('_')[0].split('-')
+                
+    #             print("sample_11_"+str(int(date[2])), v_path, fps, bitrate)
+    #             json_body = [
+    #                                 {
+    #                                     "measurement": "sample_11_"+str(int(date[2])),
+    #                                     "tags": {
+    #                                         "name": str(v_path),
+    #                                         "fps": int(fps),
+    #                                         "bitrate": int(bitrate)                                            
+    #                                     },
+    #                                     "fields": {
+    #                                         "host": "webcamPole1"
+    #                                     }
+    #                                 }
+    #                             ]
+    #             DBclient.write_points(json_body)
 
     # init analy result
     # json_body = [
@@ -127,6 +162,7 @@ if __name__=='__main__':
     #                     "measurement": "shot_list",
     #                     "tags": {
     #                         "name": str(s[0])
+    #                         ""
     #                     },
     #                     "fields": {
     #                         "list": str(s[1])

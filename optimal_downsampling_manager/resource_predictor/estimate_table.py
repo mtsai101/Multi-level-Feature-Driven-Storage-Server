@@ -194,8 +194,6 @@ class AnalyTimeTable(Table):
             print("[INFO] Updating completed!")
 
 
-    def get_estimation(self,day_of_week=0,time_of_day=0,a_type=-1,a_parameter=-1):
-        return self.table[day_of_week][time_of_day][a_type][a_parameter]
         
 
 class DownTimeTable(Table):

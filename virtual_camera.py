@@ -18,6 +18,7 @@ trigger_interval = datetime.timedelta(hours=6) # hours
 f_c = 24*60
 pre_a_selected=[5.0, 10.0, 25.0, 50.0, 100.0]
 
+ANALY_LIST = ["people_counting","illegal_parking0"]
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
@@ -127,9 +128,10 @@ class WorkloadGen():
                 # i += trigger_interval
             ## if we just want to specify some videos    
 
-        
-            result = self.DBclient.query("select * from raw_11_5")
-            result_list += list(result.get_points(measurement="raw_11_5"))
+            
+            table_name = 'sample_11_11'
+            result = self.DBclient.query("select * from "+table_name)
+            result_list += list(result.get_points(measurement=table_name))
 
 
             for r in result_list:
@@ -148,6 +150,12 @@ class WorkloadGen():
                             "measurement": "pending_video",
                             "tags": {
                                 "name":r['name'],
+                                "a_type":ANALY_LIST[0],
+                                "prev_fps":int(24),
+                                "bitrate":int(1000),
+                                "fps":int(r['fps']),
+                                "bitrate":int(r['bitrate']),
+                                "a_parameter":int(1)
                             },
                             "fields": {
                                 "host": "webcamPole1"

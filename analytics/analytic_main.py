@@ -154,12 +154,12 @@ class Analytic_Platform():
             for L_decision in L_decision_list:
                 self.analyst.set_video_clip(L_decision)
                 print('[INFO]',multiprocessing.current_process())
-                print('[INFO] a_type: {}, a_param: {}, fps: {}, bitrate:{}'
-                            .format(L_decision.a_type, 
+                print('[INFO] clip: {}, a_type: {}, a_param: {}, fps: {}, bitrate:{}'
+                            .format(L_decision.clip_name,
+                                    L_decision.a_type, 
                                     L_decision.a_param, 
                                     L_decision.fps,
                                     L_decision.bitrate))
-
                 self.analyst.analyze(
                                 L_decision.clip_name,
                                 L_decision.a_type, # analy type
