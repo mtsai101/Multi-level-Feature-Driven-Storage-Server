@@ -1,11 +1,12 @@
 from influxdb import InfluxDBClient
 import pandas as pd
-from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable
+from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable, DownTimeTable, DownRatioTable
 DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 import csv
 import cv2
 import ast 
-
+import sys
+import os
 if __name__=='__main__':
     # result = list(DBclient.query("SELECT * FROM analy_result_raw_complete"))
     # with open("raw_11_5.csv", 'w') as csvfile:
@@ -57,7 +58,8 @@ if __name__=='__main__':
     # full_IATable = Full_IATable(True)
     # degraded_IATable = Degraded_IATable(True)
     # analyTimeTable = AnalyTimeTable(True)
-    
+    # downTimeTable = DownTimeTable(True)
+    downRatioTable = DownRatioTable(True)
 
 
     ## build degrade L_ia data for degrade L_ia Table
@@ -138,3 +140,13 @@ if __name__=='__main__':
     # path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00/Pole1_2020-11-04_12-00-00.mp4"
     # cap = cv2.VideoCapture(path)
     # print(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
+
+
+    ### scp files
+    # for i in range(4,12):
+    #     database = 'analy_result_sample_quality_frame_inshot_11_'+str(i)
+    #     drop_measurement_if_exist(database)
+    
+    # for i in range(4,12):
+    #     database = 'analy_complete_sample_quality_result_inshot_11_'+str(i)
+    #     drop_measurement_if_exist(database)

@@ -61,7 +61,7 @@ def generate_L(L_type='',clip_list=[], process_num=1):
                             a_type=clip['a_type'], 
                             a_parameter=int(clip['a_parameter']),
                             prev_fps=int(clip['prev_fps']), 
-                            prev_bitrate=int(clip['bitrate']), 
+                            prev_bitrate=int(clip['prev_bitrate']), 
                             fps= int(clip['fps']), 
                             bitrate=int(clip['bitrate']))
 

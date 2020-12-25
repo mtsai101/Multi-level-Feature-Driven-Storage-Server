@@ -129,9 +129,9 @@ class WorkloadGen():
             ## if we just want to specify some videos    
 
             
-            table_name = 'sample_11_11'
+            table_name = 'sample_11_13'
             result = self.DBclient.query("select * from "+table_name)
-            result_list += list(result.get_points(measurement=table_name))
+            result_list = list(result.get_points(measurement=table_name))
 
 
             for r in result_list:
@@ -152,7 +152,7 @@ class WorkloadGen():
                                 "name":r['name'],
                                 "a_type":ANALY_LIST[0],
                                 "prev_fps":int(24),
-                                "bitrate":int(1000),
+                                "prev_bitrate":int(1000),
                                 "fps":int(r['fps']),
                                 "bitrate":int(r['bitrate']),
                                 "a_parameter":int(1)
