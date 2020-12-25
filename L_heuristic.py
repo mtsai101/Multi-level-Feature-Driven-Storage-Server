@@ -44,9 +44,6 @@ def get_time_sum():
         time_sum += time_matrix[key][value]
     return time_sum
 
-result = DBclient.query('SELECT * FROM AnalyTimeTable')
-TimeTable = pd.DataFrame(list(result.get_points(measurement="AnalyTimeTable")))
-
 
 result = DBclient.query('SELECT * FROM AnalyTimeTable')
 TimeTable = pd.DataFrame(list(result.get_points(measurement="AnalyTimeTable")))
@@ -85,11 +82,11 @@ if __name__=='__main__':
         target_ia_row = Full_IATable.loc[(Full_IATable['day_of_week'] == str(day_idx)) & (Full_IATable['time_of_day'] == str(time_idx))]
         target_time_row = TimeTable.loc[(TimeTable['day_of_week'] == str(day_idx)) & (TimeTable['time_of_day'] == str(time_idx))]
 
-        illegal_ia = float(target_ia_row.loc[(Full_IATable['a_type'] == 'illegal_parking0')]['value'])
-        people_ia = float(target_ia_row.loc[(Full_IATable['a_type'] == 'people_counting')]['value'])
+        illegal_ia = float(target_ia_row.loc[(target_ia_row['a_type'] == 'illegal_parking0')]['value'])
+        people_ia = float(target_ia_row.loc[(target_ia_row['a_type'] == 'people_counting')]['value'])
 
-        illegal_time = float(target_time_row.loc[(TimeTable['a_type'] == 'illegal_parking0')]['value'])
-        people_time = float(target_time_row.loc[(TimeTable['a_type'] == 'people_counting')]['value'])
+        illegal_time = float(target_time_row.loc[(target_time_row['a_type'] == 'illegal_parking0')]['value'])
+        people_time = float(target_time_row.loc[(target_time_row['a_type'] == 'people_counting')]['value'])
 
         # print(time_matrix.shape[1])
         for j in range(time_matrix.shape[1]):

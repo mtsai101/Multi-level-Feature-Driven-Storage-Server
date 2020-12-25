@@ -18,9 +18,9 @@ global:
   database_ip: 'localhost'
   database: 8087
   
-  # camera2SLE: 5000
-  # SLE2AP: 7000
-  # SLE2camera: 6000
+  camera2SLE: 5000
+  SLE2AP: 7000
+  SLE2camera: 6000
 
   # agent2DDM: 5001
   # DDM2DP: 7001
@@ -34,9 +34,9 @@ global:
   # DDM2DP: 7003
   # DP2agent: 6003
 
-  camera2SLE: 5004
-  SLE2AP: 7004
-  SLE2camera: 6004
+  # camera2SLE: 5004
+  # SLE2AP: 7004
+  # SLE2camera: 6004
 
   # agent2DDM: 5005
   # DDM2DP: 7005

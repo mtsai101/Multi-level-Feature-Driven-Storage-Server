@@ -12,11 +12,17 @@ import random
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 
-delta_i= 250# seconds
+delta_i= 10# seconds
 clip_number = 5
 # pre_a_selected=[4000.0,2000.0,1000.0,500.0,100.0]
 
-pre_a_selected=[5.0, 10.0, 25.0, 50.0, 100.0]
+
+pre_a_selected=[1,24,48,96,144,0]
+pre_a_selected_tuple = []
+for a in pre_a_selected:
+    for b in pre_a_selected:
+        pre_a_selected_tuple.append((a,b)) 
+
 
 valid_list=[]
 f_c = 24 * 60 # fps * second
@@ -32,57 +38,62 @@ clock = {
             "min_":00
         }
 time_matrix = np.array([
-    [24,12,10,3,2],
-    [32,15,6,4,2],
-    [23,14,8,4,1],
-    [94,23,15,3,3],
-    [35,29,15,6,1],
-    [23,17,12,6,2]
+    [24,10,3,12,2,0],
+    [32,15,6,4,2,0],
+    [23,14,8,4,1,0],
+    [94,23,15,3,3,0],
+    [35,29,15,6,1,0],
+    [23,17,12,6,2,0]
 ])
 
 profit_matrix = np.array([
-    [100,27,15,31,4],
-    [94,45,15,6,32],
-    [77,45,41,64,21],
-    [94,54,12,3,45],
-    [41,21,45,33,21],
-    [40,26,45,33,21]
+    [100,27,15,31,4,0],
+    [94,45,15,6,32,0],
+    [77,45,41,64,21,0],
+    [94,54,12,3,45,0],
+    [41,21,45,33,21,0],
+    [40,26,45,33,21,0]
 ])
 pickup_length = np.array([
-    -1,-1,-1,-1,-1,-1
+    0,0,0,0,0
 ])
+pickup_length_knapsack = np.zeros(delta_i, clip_number)
+
 if __name__=='__main__':
-    opt_state = np.zeros((delta_i, clip_number+1))
+    opt_state = np.zeros((clip_number+1, delta_i+1))
     opt_state[:,0] = 0; opt_state[0,:] = 0
-    for delta in range(3):
+    for delta in range(7,15):
         for c in range(1, clip_number+1):
             print("delta: %d, clip: %d"%(delta, c))
-            print(np.subtract(delta, time_matrix[c-1]))
-            tmp_time_matrix = np.reshape(
-                                np.argwhere(
-                                    np.subtract(delta, time_matrix[c-1])>=0
-                                    ), -1)
 
-            candicated_profit_list = [opt_state[delta][c-1]]
-            
-            
+            remain_time_array = np.subtract(delta, time_matrix[c-1])
+            candidatad_length_arg = np.argwhere(remain_time_array>=0)
+            print("remain_time_array", remain_time_array)
+            print("candidatad_length_arg", candidatad_length_arg)
             # if some clip has non zero execution time
-            if tmp_time_matrix.shape[0]:
-                print(profit_matrix[c-1][tmp_time_matrix])
-                a=[1,2,3,4]
-                print(opt_state[a][c-1].shape)
-                tmp_profit_matrix = np.add( opt_state[tmp_time_matrix[:]][c-1] + (profit_matrix[c-1][tmp_time_matrix])[:] )
-                candicated_profit_list.extend(tmp_profit_matrix)
-            
-            
-    
-            idx = np.argmax(candicated_profit_list)
-            opt_state[delta][c] = candicated_profit_list[idx]
-            
-            if idx == 0:
-                pickup_length[c-1] = -1
+            if candidatad_length_arg.shape[0]>0:
+                print("remain_time_array[candidatad_length_arg]", remain_time_array[candidatad_length_arg].reshape(-1))
+                remain_time_idx = remain_time_array[candidatad_length_arg].reshape(-1)
+
+                print("profit matrix", profit_matrix[3][candidatad_length_arg].reshape(-1))
+                print("opt_state[c-1][remain_time_idx]", opt_state[c-1][remain_time_idx])
+                print(opt_state[c-1][remain_time_idx] + profit_matrix[3][candidatad_length_arg].reshape(-1))
+                
+                tmp_profit_matrix = opt_state[c-1][remain_time_idx] + profit_matrix[c-1][candidatad_length_arg].reshape(-1)
+                tmp_max_idx = np.argmax(tmp_profit_matrix)
+                tmp_max = tmp_profit_matrix[tmp_max_idx]
+                print(tmp_max_idx, tmp_max)
+                sys.exit()
             else:
-                pickup_length[c-1] = time_matrix[c-1][tmp_time_matrix[idx-1]]
+                tmp_max = 0
+    
+            if opt_state[c-1][delta] >= tmp_max: # not pickup any length of c
+                opt_state[c][delta] = opt_state[c-1][delta]
+                pickup_length_knapsack[delta][c-1] = len(pre_a_selected_tuple)-1
+            else: # pick the length of c
+                opt_state[c][delta] = tmp_max
+                pickup_length_knapsack[delta] = pickup_length_knapsack[remain_time_idx][:c-1]
+                pickup_length_knapsack[delta][c-1] = candidatad_length_arg[tmp_max_idx]
             
             
             # break

@@ -171,12 +171,39 @@ class Table:
                 if len(sorted_list) > self.window_size:
                     result_value = sum(item['ratio'] for item in sorted_list[:self.window_size+1])/self.window_size
                     # print("total frame:",sum(item['total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size)
-
                 else:
                     result_value = sum(item['ratio'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
                     # print(sum(item['total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list))
 
                 return result_value
+            else:
+                return 0
+
+        elif self.model_type == 'Degraded_Q_IATable':
+            sample_result_list=[]; full_result_list=[]
+            for d in range(self.start_day,self.end_day):
+                full_table_name = 'analy_complete_result_inshot_11_'+str(d)
+                sample_table_name = 'analy_complete_sample_quality_result_inshot_11_'+str(d)
+                try:
+                    sample_result = DBclient.query('SELECT \"name\", target FROM '+ sample_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\' AND \"fps\"=\''+str(fps)+'\' AND \"bitrate\"=\''+str(bitrate)+'\'')
+                    sample_result_list.extend(list(sample_result.get_points(measurement = sample_table_name)))
+                    full_result = DBclient.query('SELECT \"name\", target FROM '+ full_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\'')
+                    full_result_list.extend(list(full_result.get_points(measurement = full_table_name)))
+                    if len(sample_result) != len(full_result):
+                        print("not found enough sample_result_list on", sample_table_name, "")
+                except:
+                    continue
+
+            if len(sample_result_list)>0 and len(full_result_list)>0:
+                result_value=0
+                full_sorted_list = sorted(full_result_list, key=lambda k :k['name'], reverse=True)
+                sample_sorted_list = sorted(sample_result_list, key=lambda k :k['name'], reverse=True)
+            
+                length = min(len(full_sorted_list), self.window_size)
+                for i in range(length):
+                    if full_sorted_list[i]['target'] and sample_sorted_list[i]['target']:
+                        result_value += sample_sorted_list[i]['target']/full_sorted_list[i]['target']
+                return result_value/length
             else:
                 return 0
         else:
@@ -291,22 +318,26 @@ class DownRatioTable(Table):
 
             print("[INFO] Updating completed!")
     
-class Degraded_IATable(Table):
+class Degraded_Q_IATable(Table):
     def __init__(self,refresh):
         super().__init__('')
 
-        self.model_type='degraded_IATable'
+        self.model_type='Degraded_Q_IATable'
         self.refresh = refresh
         if self.refresh:
             ## influxdb can not update, only we can do is deleting the previous one
-            print("[INFO] Updating the Degraded_IATable models...")
-            drop_measurement_if_exist("Degraded_IATable")
+            print("[INFO] Updating the Degraded_Q_IATable models...")
+            drop_measurement_if_exist("Degraded_Q_IATable")
             json_body = []
             for day_idx in range(2):
                 for time_idx in range(24):
                     for a_type in ANALY_LIST:
-                        for a_parameter in pre_a_selected:
-                            value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
+                        for d_param_key, d_parameter in enumerate(pre_d_selected):
+                            if d_param_key==0:
+                                value = 1
+                            else:
+                                value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
+
                             json_body = [
                                     {
                                         "measurement":self.model_type,
@@ -382,6 +413,20 @@ class Full_IATable(Table):
                     max_value = sorted(max_result, key=lambda k :k['info'],reverse=True)[0]['info']
 
                     self.max_info[a_type] = max(self.max_info[a_type], max_value)
+
+                    json_body = [
+                            {
+                                "measurement":"MaxAnalyticTargetNumber",
+                                "tags": {
+                                    "a_type":str(a_type)
+                                },
+                                "fields": {
+                                    "value":int(self.max_info[a_type]) 
+                                }
+                            }
+                        ]
+                    DBclient.write_points(json_body)
+
 
             ## influxdb can not update, only we can do is deleting the previous one
             print("[INFO] Updating the Full_IATable models...")
