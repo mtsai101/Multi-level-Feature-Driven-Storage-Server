@@ -92,7 +92,7 @@ for k, i in enumerate(pickup_quality):
 
 if __name__=='__main__':
     opt_state = np.zeros((O_v+1, delta_d+1, clip_number+1))
-    pickup_quality_knapsack = np.array([[[[7 for i in range(clip_number)] for i in range(clip_number+1)] for j in range(delta_d+1)] for k in range(O_v+1)])
+    pickup_quality_knapsack = np.array([[[[(len(pre_d_selected)-1) for i in range(clip_number)] for i in range(clip_number+1)] for j in range(delta_d+1)] for k in range(O_v+1)])
 
 
     count = 0
@@ -100,6 +100,7 @@ if __name__=='__main__':
     for o in range(1, O_v+1):
         for delta in range(1, delta_d+1):
             for c in range(1, clip_number+1):
+
                 remain_time_array = np.subtract(delta, time_matrix[c-1])
                 remain_space_array = np.subtract(o, space_matrix[c-1])
                 
@@ -109,7 +110,13 @@ if __name__=='__main__':
                 candidatad_quality_arg_space = np.argwhere(remain_space_array>=0).reshape(-1)
 
                 candidatad_quality_arg = np.intersect1d(candidatad_quality_arg_time, candidatad_quality_arg_space)
+                
+                ## Don't choose better quality
+                og_quality = pickup_quality[c-1]
+                invalaid_quality = np.where(candidatad_quality_arg<og_quality)
+                candidatad_quality_arg = np.delete(candidatad_quality_arg, invalaid_quality)
                 print("candidatad_quality_arg", candidatad_quality_arg)
+                
                 # if some clip has non zero execution time
                 if candidatad_quality_arg.shape[0]>0:
                     remain_time_idx = remain_time_array[candidatad_quality_arg].reshape(-1)
@@ -122,7 +129,7 @@ if __name__=='__main__':
                     for q_i in range(len(candidatad_quality_arg)):
                         tmp_profit_matrix.append(opt_state[remain_space_idx[q_i]][remain_time_idx[q_i]][c-1] + profit_matrix[c-1][candidatad_quality_arg[q_i]])
                     
-
+                    
                     tmp_max_idx = np.argmax(np.array(tmp_profit_matrix))
                     tmp_max = tmp_profit_matrix[tmp_max_idx]
   
@@ -140,7 +147,7 @@ if __name__=='__main__':
                     print("quality no change:", opt_state[o][delta][c])
                 else: # pick the length of c
                     opt_state[o][delta][c] = tmp_max
-                    og_idx = candidatad_quality_arg[tmp_max_idx]
+
                     pickup_quality_knapsack[o][delta][c] = pickup_quality_knapsack[remain_space_idx[tmp_max_idx]][remain_time_idx[tmp_max_idx]][c-1]
                     print("prev space %d, prev time %d"%(remain_space_idx[tmp_max_idx],remain_time_idx[tmp_max_idx]))
                     print("prev quality", pickup_quality_knapsack[remain_space_idx[tmp_max_idx]][remain_time_idx[tmp_max_idx]][c-1])

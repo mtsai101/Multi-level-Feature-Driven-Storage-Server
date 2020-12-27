@@ -15,7 +15,7 @@ DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 
-delta_i= 100# seconds
+delta_i= 3600# seconds
 
 # pre_a_selected=[4000.0,2000.0,1000.0,500.0,100.0]
 
@@ -26,7 +26,7 @@ for a in pre_a_selected:
     for b in pre_a_selected:
         pre_a_selected_tuple.append((a,b)) 
 
-
+# clip_number = 6
 # time_matrix = np.array([
 #     [24,10,3,12,2,0],
 #     [32,15,6,4,2,0],
@@ -73,8 +73,11 @@ if __name__=='__main__':
 
 
     clip_number = len(day_list)
+    
     pickup_length = [0 for i in range(clip_number)]
-    pickup_length_knapsack = np.zeros((delta_i+1, clip_number))
+    pickup_length_knapsack = np.array([[[(len(pre_a_selected_tuple)-1) for i in range(clip_number)] for j in range(clip_number+1)] for i in range(delta_i+1)])
+    opt_state = np.zeros((delta_i+1, clip_number+1))
+
 
     time_matrix = np.zeros((clip_number, len(pre_a_selected)*(len(pre_a_selected))))
     profit_matrix = np.zeros((clip_number, len(pre_a_selected)*(len(pre_a_selected))))
@@ -104,8 +107,7 @@ if __name__=='__main__':
             profit_matrix[i][j] += people_ia * (frame_num_in_shot/pre_a_selected_tuple[j][1]) if pre_a_selected_tuple[j][1] != 0 else 0
 
     time_matrix = np.ceil(time_matrix).astype(int)
-    opt_state = np.zeros((clip_number+1, delta_i+1))
-
+   
     count = 0
     for delta in range(1,delta_i+1):
         for c in range(1, clip_number+1):
@@ -117,33 +119,38 @@ if __name__=='__main__':
             # if some clip has non zero execution time
             if candidatad_length_arg.shape[0]>0:
                 remain_time_idx = remain_time_array[candidatad_length_arg].reshape(-1)
-
-                tmp_profit_matrix = opt_state[c-1][remain_time_idx] + profit_matrix[c-1][candidatad_length_arg].reshape(-1)
+                tmp_profit_matrix = list() 
+                for l_i in range(len(remain_time_idx)):
+                    tmp_profit_matrix.append(opt_state[remain_time_idx[l_i]][c-1] + profit_matrix[c-1][candidatad_length_arg[l_i]])
+                
                 tmp_max_idx = np.argmax(tmp_profit_matrix)
                 tmp_max = tmp_profit_matrix[tmp_max_idx]
                 # print(tmp_max_idx,tmp_max)
             else:
                 tmp_max = 0
     
-            if opt_state[c-1][delta] >= tmp_max: # not pickup any length of c
-                opt_state[c][delta] = opt_state[c-1][delta]
-                pickup_length_knapsack[delta][c-1] = len(pre_a_selected_tuple)-1
+            if opt_state[delta][c-1] >= tmp_max: # not pickup any length of c
+                opt_state[delta][c] = opt_state[delta][c-1]
+                pickup_length_knapsack[delta][c] = pickup_length_knapsack[delta][c-1]
             else: # pick the length of c
-                opt_state[c][delta] = tmp_max
-                ### bug here !!!
-                pickup_length_knapsack[delta] = pickup_length_knapsack[time_matrix[c-1][candidatad_length_arg[tmp_max_idx]]]
-                pickup_length_knapsack[delta][c-1] = candidatad_length_arg[tmp_max_idx]
+                opt_state[delta][c] = tmp_max
+                pickup_length_knapsack[delta][c] = pickup_length_knapsack[remain_time_idx[tmp_max_idx]][c-1]
+                pickup_length_knapsack[delta][c][c-1] = candidatad_length_arg[tmp_max_idx]
 
         
        
-    pickup_length = pickup_length_knapsack[-1].astype(int)
+    pickup_length = pickup_length_knapsack[-1][-1].astype(int)
     time_sum = 0
-
     for key, value in enumerate(pickup_length):
         time_sum += time_matrix[key][value]
 
-    print("time_sum", time_sum)
-    print("pickup_length", pickup_length)
-    print("profit_sum", opt_state[-1][-1])
+    profit_sum = 0
+    for key, value in enumerate(pickup_length):
+        profit_sum += profit_matrix[key][value]
 
+
+    print("pickup_length", pickup_length)
+    print("time_sum", time_sum)
+    print("profit_sum", profit_sum)
+    print("profit_sum_opt", opt_state[-1][-1])
 
