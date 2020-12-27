@@ -26,9 +26,9 @@ global:
   # DDM2DP: 7001
   # DP2agent: 6001
 
-  # camera2SLE: 5002
-  # SLE2AP: 7002
-  # SLE2camera: 6002
+  camera2SLE: 5002
+  SLE2AP: 7002
+  SLE2camera: 6002
 
   # agent2DDM: 5003
   # DDM2DP: 7003
@@ -65,6 +65,7 @@ global:
   # camera2SLE: 5014
   # SLE2AP: 7014
   # SLE2camera: 6014
+<<<<<<< HEAD
 
   # camera2SLE: 5016
   # SLE2AP: 7016
@@ -76,7 +77,37 @@ global:
   camera2SLE: 5020
   SLE2AP: 7020
   SLE2camera: 6020
+=======
+>>>>>>> a63bce643ede0a669c3e6fe62df7eb4f3ec1e9fe
 
+  # camera2SLE: 5016
+  # SLE2AP: 7014
+  # SLE2camera: 6016
+
+  # camera2SLE: 5018
+  # SLE2AP: 7018
+  # SLE2camera: 6018
+
+  # camera2SLE: 5020
+  # SLE2AP: 7020
+  # SLE2camera: 6020
+
+  # camera2SLE: 5021
+  # SLE2AP: 7021
+  # SLE2camera: 6021
+
+  # camera2SLE: 5023
+  # SLE2AP: 7023
+  # SLE2camera: 6023
+
+  # camera2SLE: 5025
+  # SLE2AP: 7025
+  # SLE2camera: 6025
+
+  # camera2SLE: 5027
+  # SLE2AP: 7027
+  # SLE2camera: 6027
+  
   # agent2DDM: 5009
   # DDM2DP: 7009
   # DP2agent: 6009
@@ -108,9 +139,9 @@ global:
   # DDM2DP: 7021
   # DP2agent: 6021
 
-  agent2DDM: 5023
-  DDM2DP: 7023
-  DP2agent: 6023
+  # agent2DDM: 5023
+  # DDM2DP: 7023
+  # DP2agent: 6023
 
 dispatcher:
   SLE_trigger_time: 6 # hour 

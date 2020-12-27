@@ -1,11 +1,12 @@
 from influxdb import InfluxDBClient
 import pandas as pd
-from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable
-DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
+from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable, DownTimeTable, DownRatioTable
+# DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 import csv
 import cv2
 import ast 
-
+import sys
+import os
 if __name__=='__main__':
     # result = list(DBclient.query("SELECT * FROM analy_result_raw_complete"))
     # with open("raw_11_5.csv", 'w') as csvfile:
@@ -57,7 +58,8 @@ if __name__=='__main__':
     # full_IATable = Full_IATable(True)
     # degraded_IATable = Degraded_IATable(True)
     # analyTimeTable = AnalyTimeTable(True)
-    
+    # downTimeTable = DownTimeTable(True)
+    downRatioTable = DownRatioTable(True)
 
 
     ## build degrade L_ia data for degrade L_ia Table
@@ -139,6 +141,7 @@ if __name__=='__main__':
     # cap = cv2.VideoCapture(path)
     # print(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
 
+<<<<<<< HEAD
     json_body=[
             {
                 "measurement": "test",
@@ -154,3 +157,43 @@ if __name__=='__main__':
             }
     ]
     DBclient.write_points(json_body)
+=======
+
+    ### scp files
+    # for i in range(4,12):
+    #     database = 'analy_result_sample_quality_frame_inshot_11_'+str(i)
+    #     drop_measurement_if_exist(database)
+    
+    # for i in range(4,12):
+    #     database = 'analy_complete_sample_quality_result_inshot_11_'+str(i)
+    #     drop_measurement_if_exist(database)
+
+
+    DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage_capoo')
+    d = 
+    name = "analy_complete_sample_quality_result_inshot_11_"+str(d)
+    result = DBclient.query("SELECT * FROM "+name)
+    result_list = list(result.get_points(measurement=name))
+    json_body = []
+    json_body.append(
+            {
+                "measurement": name,
+                "tags": {
+                    "a_type": str(result_list['a_type']),
+                    "day_of_week":int(result_list['day_of_week']),
+                    "time_of_day":int(result_list['time_of_day']),
+                    "a_parameter": int(result_list['a_parameter']), 
+                    "fps": int(result_list['fps']),
+                    "bitrate": int(result_list['bitrate'])
+                },
+                "fields": {
+                    "total_frame_number":int(result_list['total_frame_number']),
+                    "name": str(result_list['name']),
+                    "time_consumption": float(result_list['time_consumption']),
+                    "target": int(result_list['target'])
+                }
+            }
+    )
+    DBclient.write_points(json_body)
+    DBclient.write_points(json_body, database='merge_storage', time_precision='ms', batch_size=400, protocol='json')
+>>>>>>> a63bce643ede0a669c3e6fe62df7eb4f3ec1e9fe

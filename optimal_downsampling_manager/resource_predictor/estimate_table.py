@@ -135,32 +135,81 @@ class Table:
                 return 0
 
         elif self.model_type == 'DownTime':
-            target_col = 'time_consumption'
-            ## if fps and bitrate equal to default, return time = 0 (no downsample)
-            if fps == pre_frame_rate[0] and bitrate == pre_bitrate[0]:
-                estimation_point = pd.DataFrame(0, index=np.arange(self.window_size), columns=[target_col])
-                return target_col, estimation_point
+            # For t(c, P_c)
+            result_list = []; 
+            table_name = "down_result" 
+            # print('SELECT \"name\", execution_time FROM ' + table_name+ ' WHERE ' + '\"day_idx\"=\'' + str(day_idx) + '\' AND \"time_idx\"=\'' + str(time_idx)+'\' AND \'fps\'=\''+str(fps)+'\' AND \'bitrate\'='+str(bitrate)+'\'')
+            result = DBclient.query('SELECT \"name\", execution_time FROM ' + table_name+ ' WHERE ' + '\"day_idx\"=\'' + str(day_idx) + '\' AND \"time_idx\"=\'' + str(time_idx)+'\' AND \"fps\"=\''+str(fps)+'\' AND \"bitrate\"=\''+str(bitrate)+'\'')
+            result_list.extend(list(result.get_points(measurement = table_name)))
 
-            result = DBclient.query('SELECT * FROM '+self.table_name+' WHERE \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx) + '\' AND \"fps\"=\''+str(fps) +'\' AND \"bitrate\"=\''+str(bitrate)+'\' ORDER BY time DESC LIMIT ' + str(self.window_size))
-            estimation_point = pd.DataFrame(result.get_points(measurement=self.table_name))
+            if len(result_list)>0:
+                sorted_list = sorted(result_list, key=lambda k :k['name'], reverse=True)
+                # print(sum(sorted_list[:]['target_total_frame_number']))
+                if len(sorted_list) > self.window_size:
+                    result_value = sum(item['execution_time'] for item in sorted_list[:self.window_size+1])/self.window_size
+                    # print("total frame:",sum(item['total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size)
+
+                else:
+                    result_value = sum(item['execution_time'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
+                    # print(sum(item['total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list))
+
+                return result_value
+            else:
+                return 0
+
         elif self.model_type == 'DownRatio':
-            target_col = 'ratio'
-            ## if fps and bitrate equal to default, return ratio = 1 (no downsample)
-            if fps == pre_frame_rate[0] and bitrate == pre_bitrate[0]:
-                estimation_point = pd.DataFrame(1, index=np.arange(self.window_size), columns=[target_col])
-                return target_col, estimation_point
-            result = DBclient.query('SELECT * FROM '+self.table_name+' WHERE \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx) + '\' AND \"fps\"=\'' + str(fps) +'\' AND \"bitrate\"=\'' + str(bitrate) + '\' ORDER BY time DESC LIMIT ' + str(self.window_size))
-            estimation_point = pd.DataFrame(result.get_points(measurement=self.table_name))
+            # For \hat{o}(c, P_c)
+            result_list = []; 
+            table_name = "down_result" 
+            # print('SELECT \"name\", execution_time FROM ' + table_name+ ' WHERE ' + '\"day_idx\"=\'' + str(day_idx) + '\' AND \"time_idx\"=\'' + str(time_idx)+'\' AND \'fps\'=\''+str(fps)+'\' AND \'bitrate\'='+str(bitrate)+'\'')
+            result = DBclient.query('SELECT \"name\", ratio FROM ' + table_name+ ' WHERE ' + '\"day_idx\"=\'' + str(day_idx) + '\' AND \"time_idx\"=\'' + str(time_idx)+'\' AND \"fps\"=\''+str(fps)+'\' AND \"bitrate\"=\''+str(bitrate)+'\'')
+            result_list.extend(list(result.get_points(measurement = table_name)))
+
+            if len(result_list)>0:
+                sorted_list = sorted(result_list, key=lambda k :k['name'], reverse=True)
+                # print(sum(sorted_list[:]['target_total_frame_number']))
+                if len(sorted_list) > self.window_size:
+                    result_value = sum(item['ratio'] for item in sorted_list[:self.window_size+1])/self.window_size
+                    # print("total frame:",sum(item['total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size)
+                else:
+                    result_value = sum(item['ratio'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
+                    # print(sum(item['total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list))
+
+                return result_value
+            else:
+                return 0
+
+        elif self.model_type == 'Degraded_Q_IATable':
+            sample_result_list=[]; full_result_list=[]
+            for d in range(self.start_day,self.end_day):
+                full_table_name = 'analy_complete_result_inshot_11_'+str(d)
+                sample_table_name = 'analy_complete_sample_quality_result_inshot_11_'+str(d)
+                try:
+                    sample_result = DBclient.query('SELECT \"name\", target FROM '+ sample_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\' AND \"fps\"=\''+str(fps)+'\' AND \"bitrate\"=\''+str(bitrate)+'\'')
+                    sample_result_list.extend(list(sample_result.get_points(measurement = sample_table_name)))
+                    full_result = DBclient.query('SELECT \"name\", target FROM '+ full_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\'')
+                    full_result_list.extend(list(full_result.get_points(measurement = full_table_name)))
+                    if len(sample_result) != len(full_result):
+                        print("not found enough sample_result_list on", sample_table_name, "")
+                except:
+                    continue
+
+            if len(sample_result_list)>0 and len(full_result_list)>0:
+                result_value=0
+                full_sorted_list = sorted(full_result_list, key=lambda k :k['name'], reverse=True)
+                sample_sorted_list = sorted(sample_result_list, key=lambda k :k['name'], reverse=True)
+            
+                length = min(len(full_sorted_list), self.window_size)
+                for i in range(length):
+                    if full_sorted_list[i]['target'] and sample_sorted_list[i]['target']:
+                        result_value += sample_sorted_list[i]['target']/full_sorted_list[i]['target']
+                return result_value/length
+            else:
+                return 0
         else:
             raise NameError('Unknown Query Name')
-
+        return 0
         
-        
-        if target_col == 'info_amount' and not estimation_point.empty:
-            estimation_point['info_amount'] = estimation_point['info_amount']/(self.max_info[a_type])
-
-        return target_col, estimation_point
-    
 class AnalyTimeTable(Table):
     def __init__(self,refresh):
         super().__init__('')
@@ -204,44 +253,33 @@ class DownTimeTable(Table):
         if self.refresh:
             print("[INFO] Updating the DownTimeTable models...")
             drop_measurement_if_exist("DownTimeTable")
-
+            json_body=[]
             for day_idx in range(2):
                 for time_idx in range(24):
-                    for d_parameter in pre_d_selected:
-                        value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
-                        json_body = [
+                    for d_param_key, d_parameter in enumerate(pre_d_selected):
+                        if d_param_key==0:
+                            value = 0
+                        else:
+                            value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
+                        json_body.append(
                                 {
-                                    "measurement":self.model_type + 'PredTable',
+                                    "measurement":self.model_type + 'Table',
                                     "tags": {
                                         "name": self.model_type,
                                         "fps":float(d_parameter[0]),
                                         "bitrate":float(d_parameter[1]),
-                                        "day_of_week":day_idx,
-                                        "time_of_day":time_idx,
+                                        "day_of_week":int(day_idx),
+                                        "time_of_day":int(time_idx),
                                     },
                                     "fields": {
-                                        "value":value
+                                        "value":float(value)
                                     }
                                 }
-                            ]
+                        )      
+            DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
 
-                        DBclient.write_points(json_body)
+            # DBclient.write_points(json_body)
             print("[INFO] Updating completed!")
-        else:
-            result = DBclient.query('SELECT * FROM DownTimePredTable')
-            result_point = list(result.get_points(measurement='DownTimePredTable'))
-
-            self.table = np.zeros(len(result_point), dtype = np.float32)
-
-            for k,i in enumerate(result_point):
-                self.table[k] =  i["value"]
-            self.table = self.table.reshape((2,12,pre_d_selected.shape[0]))
-
-    def get_estimation(self, day_of_week=0, time_of_day=0, p_id=-1):
-        if p_id==0 or p_id==-1:
-            return 0
-        else:
-            return self.table[day_of_week][time_of_day][p_id]
 
                             
 class DownRatioTable(Table):
@@ -252,45 +290,74 @@ class DownRatioTable(Table):
         if self.refresh:
             print("[INFO] Updating the DownRatioTable models...")
             drop_measurement_if_exist("DownRatioTable")
+            json_body = []
             for day_idx in range(2):
                 for time_idx in range(24):
-                    for d_parameter in pre_d_selected:
-                        value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
-                        json_body = [
+                    for d_param_key, d_parameter in enumerate(pre_d_selected):
+                        if d_param_key==0:
+                            value = 1
+                        else:
+                            value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
+                        json_body.append(
                                 {
-                                    "measurement":self.model_type + 'PredTable',
+                                    "measurement":self.model_type + 'Table',
                                     "tags": {
                                         "name": self.model_type,
-                                        "fps":d_parameter[0],
-                                        "bitrate":d_parameter[1],
-                                        "day_of_week":day_idx,
-                                        "time_of_day":time_idx
+                                        "fps":float(d_parameter[0]),
+                                        "bitrate":float(d_parameter[1]),
+                                        "day_of_week":int(day_idx),
+                                        "time_of_day":int(time_idx),
                                     },
                                     "fields": {
-                                        "value":value
+                                        "value":float(value)
                                     }
                                 }
-                            ]
+                        )      
+            print(len(json_body))
+            DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
 
-                        DBclient.write_points(json_body)
             print("[INFO] Updating completed!")
-        else:
-            result = DBclient.query('SELECT * FROM DownRatioPredTable')
-            result_point = list(result.get_points(measurement='DownRatioPredTable'))
+    
+class Degraded_Q_IATable(Table):
+    def __init__(self,refresh):
+        super().__init__('')
 
-            self.table = np.zeros(len(result_point), dtype = np.float32)
+        self.model_type='Degraded_Q_IATable'
+        self.refresh = refresh
+        if self.refresh:
+            ## influxdb can not update, only we can do is deleting the previous one
+            print("[INFO] Updating the Degraded_Q_IATable models...")
+            drop_measurement_if_exist("Degraded_Q_IATable")
+            json_body = []
+            for day_idx in range(2):
+                for time_idx in range(24):
+                    for a_type in ANALY_LIST:
+                        for d_param_key, d_parameter in enumerate(pre_d_selected):
+                            if d_param_key==0:
+                                value = 1
+                            else:
+                                value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
 
-            for k,i in enumerate(result_point):
-                self.table[k] =  i["value"]
-            self.table = self.table.reshape((2,12,pre_d_selected.shape[0]))
+                            json_body = [
+                                    {
+                                        "measurement":self.model_type,
+                                        "tags": {
+                                            "name": self.model_type,
+                                            "a_type":a_type,
+                                            "fps":float(d_parameter[0]),
+                                            "bitrate":float(d_parameter[1]),
+                                            "day_of_week":int(day_idx),
+                                            "time_of_day":int(time_idx),
+                                        },
+                                        "fields": {
+                                            "value":float(value)
+                                        }
+                                    }
+                                ]
+            DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+            print("[INFO] Updating completed!")
+        
 
-    def get_estimation(self, day_of_week=0, time_of_day=0,p_id=-1):
-        if p_id==-1:
-            return 0
-        elif p_id == 0:
-            return 1
-        else:
-            return self.table[day_of_week][time_of_day][p_id]
 
 class Degraded_IATable(Table):
     def __init__(self,refresh):
@@ -346,6 +413,20 @@ class Full_IATable(Table):
                     max_value = sorted(max_result, key=lambda k :k['info'],reverse=True)[0]['info']
 
                     self.max_info[a_type] = max(self.max_info[a_type], max_value)
+
+                    json_body = [
+                            {
+                                "measurement":"MaxAnalyticTargetNumber",
+                                "tags": {
+                                    "a_type":str(a_type)
+                                },
+                                "fields": {
+                                    "value":int(self.max_info[a_type]) 
+                                }
+                            }
+                        ]
+                    DBclient.write_points(json_body)
+
 
             ## influxdb can not update, only we can do is deleting the previous one
             print("[INFO] Updating the Full_IATable models...")
