@@ -11,8 +11,7 @@ import os
 import csv
 import copy
 import yaml
-
-
+import sys
 
 trigger_interval = datetime.timedelta(hours=6) # hours
 f_c = 24*60
@@ -129,9 +128,9 @@ class WorkloadGen():
             ## if we just want to specify some videos    
 
             
-            table_name = 'sample_11_11'
+            table_name = 'sample_11_5'
             result = self.DBclient.query("select * from "+table_name)
-            result_list += list(result.get_points(measurement=table_name))
+            result_list = list(result.get_points(measurement=table_name))
 
 
             for r in result_list:
@@ -150,9 +149,9 @@ class WorkloadGen():
                             "measurement": "pending_video",
                             "tags": {
                                 "name":r['name'],
-                                "a_type":ANALY_LIST[0],
+                                "a_type":ANALY_LIST[1],
                                 "prev_fps":int(24),
-                                "bitrate":int(1000),
+                                "prev_bitrate":int(1000),
                                 "fps":int(r['fps']),
                                 "bitrate":int(r['bitrate']),
                                 "a_parameter":int(1)
@@ -163,7 +162,7 @@ class WorkloadGen():
                         }
                     ]
                     self.DBclient.write_points(json_body)
-
+            
             self.lock.release()
             self.conn_send2SLE.send(True)
             print("Send signal to SLE")

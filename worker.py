@@ -138,3 +138,19 @@ if __name__=='__main__':
     # path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/SmartPole/Pole1/2020-11-04_00-00-00/Pole1_2020-11-04_12-00-00.mp4"
     # cap = cv2.VideoCapture(path)
     # print(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
+
+    json_body=[
+            {
+                "measurement": "test",
+                    "tags": {
+                        "a_type": str("a_type"),
+                        "bitrate": int(1000),
+                        "bitrate": int(500)
+                    },
+                    "fields": {
+                        "total_frame_number":int(17),
+                        
+                    }
+            }
+    ]
+    DBclient.write_points(json_body)

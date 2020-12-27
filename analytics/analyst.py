@@ -23,7 +23,7 @@ import csv
 import ast
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
@@ -90,16 +90,15 @@ class Analyst(object):
 
     # find the shot start and end position in the sampled quality video
     def get_shot_list(self, L_decision):
-        if L_decision.fps!=24 and L_decision.bitrate!=1000:
+        if L_decision.fps==24 and L_decision.bitrate==1000:
+            unsample_video_path = clip['name']
+            sampling_frame_ratio = 1
+        else:
             sample_video_path_parse = L_decision.clip_name.split('/')
             unsample_video_path = os.path.join('./storage_server_volume/SmartPole/Pole1', sample_video_path_parse[-2], sample_video_path_parse[-1])
             cap = cv2.VideoCapture(unsample_video_path); origin_video_frame_num = cap.get(cv2.CAP_PROP_FRAME_COUNT); 
             cap.release()
             sampling_frame_ratio = self.total_frame_num/origin_video_frame_num
-
-        else:
-            unsample_video_path = clip['name']
-            sampling_frame_ratio = 1
 
         result = self.DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+unsample_video_path+"\'")
         shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
