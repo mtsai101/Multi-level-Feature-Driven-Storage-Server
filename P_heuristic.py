@@ -13,34 +13,21 @@ import random
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 
-O_v = 100# MB
-delta_d = 50
+O_v = 600# MB
+delta_d = 200
 clip_number = 6
 # pre_a_selected=[4000.0,2000.0,1000.0,500.0,100.0]
 
 pre_d_selected = [[24,1000],[24,500],[12,500],[12,100],[6,100],[6,10],[1,10],[0,0]]
 
-valid_list=[]
-f_c = 24 * 60 # fps * second
-# analyTimeTable = AnalyTimeTable(False)
-# iATable = IATable(False)
-# debug = False
-trigger_interval=6
 
-clock = {
-            "month":11,
-            "day":8,
-            "hour":6,
-            "min_":00
-        }
-        
 time_matrix = np.array([
-    [40,36,24,12,10,3,2,0],
-    [50,41,32,15,6,4,2,0],
-    [73,50,23,14,8,4,1,0],
-    [100,94,50,23,15,3,3,0],
-    [50,46,43,35,29,6,1,0],
-    [69,59,23,17,12,6,2,0]
+    [0,45,24,12,10,3,2,0],
+    [0,41,32,15,6,4,2,0],
+    [0,50,23,14,8,4,1,0],
+    [0,94,50,23,15,3,3,0],
+    [0,46,43,35,29,6,1,0],
+    [0,59,23,17,12,6,2,0]
 ])
 
 space_matrix = np.array([
@@ -65,10 +52,6 @@ pickup_quality = [
     0,0,0,0,0,0
 ]
 
-pickup_info = np.array([
-    0,0,0,0,0,0
-])
-
 def get_time_sum():
     time_sum = 0
     print(pickup_length)
@@ -79,11 +62,8 @@ def get_time_sum():
 space_sum = 0
 for k, i in enumerate(pickup_quality):
     space_sum  += space_matrix[k][i]
-space_sum
-time_sum = 0
 
-# space_sum = space_sum - space_matrix[c][pickup_quality[c]] + space_matrix[c][d] 
-# time_sum = time_sum - time_matrix[c][pickup_quality[c]] + time_matrix[c][d]
+time_sum = 0
 
 # result = DBclient.query('SELECT * FROM DownTimeTable')
 # TimeTable = pd.DataFrame(list(result.get_points(measurement="DownTimeTable")))
@@ -202,23 +182,32 @@ def P_FIFO():
     print("FIFO Final :", output_qualuity)
 
 def P_heuristic():
+    global pre_d_selected, space_sum, space_matrix, profit_matrix
     argsort_space_matrix = np.argsort((-space_matrix))
 
+    time_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
+    space_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
+    profit_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
+
+
     for i in range(clip_number):
-        profit_matrix[i] = profit_matrix[i][argsort_space_matrix[i]]
-        time_matrix[i] = time_matrix[i][argsort_space_matrix[i]]
+        time_matrix_sorted[i] = time_matrix[i][argsort_space_matrix[i]]
+        space_matrix_sorted[i] = space_matrix[i][argsort_space_matrix[i]]
+        profit_matrix_sorted[i] = profit_matrix[i][argsort_space_matrix[i]]
+
+
 
     profit_list = []
     for c, q in enumerate(pickup_quality):
-        s = space_matrix[c][q]
+        s = space_matrix_sorted[c][q]
 
-        if s>0 and pickup_quality[c] < space_matrix.shape[1]:
-            profit_list.append((c, profit_matrix[c][q]/s)) 
+        if s>0 and pickup_quality[c] < profit_matrix_sorted.shape[1]:
+            profit_list.append((c, profit_matrix_sorted[c][q]/s)) 
 
     while space_sum > O_v or time_sum > delta_d:
         
         victim_c = min(profit_list, key= lambda x: x[1])
-        print(profit_list)
+        # print(profit_list)
 
 
         c = victim_c[0]
@@ -226,35 +215,53 @@ def P_heuristic():
         d = pickup_quality[c] + 1
         
         
-        if pickup_quality[c]==space_matrix.shape[1]-1:
+        if pickup_quality[c]==space_matrix_sorted.shape[1]-1:
             print("the victim can not be downsample anymore")
             continue
 
         
-        space_sum = space_sum - space_matrix[c][pickup_quality[c]] + space_matrix[c][d] 
+        space_sum = space_sum - space_matrix_sorted[c][pickup_quality[c]] + space_matrix_sorted[c][d] 
         
         time_sum = 0
         for t_key,v in enumerate(pickup_quality):
-            time_sum += time_matrix[t_key][v]
+            time_sum += time_matrix_sorted[t_key][v]
 
 
-        s = space_matrix[c][d]
+        s = space_matrix_sorted[c][d]
         if s > 0: ## make sure the last one is zero
-            profit_list.append((c, profit_matrix[c][d]/s)) 
+            profit_list.append((c, profit_matrix_sorted[c][d]/s)) 
 
         pickup_quality[c] = d
-        print(c, pickup_quality[c])
+        # print(c, pickup_quality[c])
         if len(profit_list) == 0:
             print("np video")
             break
-        print(pickup_quality)
+        # print(pickup_quality)
        
-        print(space_sum, time_sum)
+        # print(space_sum, time_sum)
 
     pre_d_selected = np.array(pre_d_selected)
-    output_qualuity = pre_d_selected[argsort_space_matrix[pickup_quality[i]]]
+    for k_i, i in enumerate(pickup_quality):
+        pickup_quality[k_i] = argsort_space_matrix[k_i][i]
         
-    print("Final :", output_qualuity)
+
+    time_sum = 0
+    for key, value in enumerate(pickup_quality):
+        time_sum += time_matrix[key][value]
+
+    space_sum = 0
+    for key, value in enumerate(pickup_quality):
+        space_sum += space_matrix[key][value]
+
+    profit_sum = 0
+    for key, value in enumerate(pickup_quality):
+        profit_sum += profit_matrix[key][value]
+
+    print("pickup_quality",pickup_quality)
+    print("time_sum", time_sum)
+    print("space_sum", space_sum)
+    print("profit_sum", profit_sum)
+
 
 
 
@@ -262,6 +269,7 @@ if __name__=='__main__':
     # P_EF()
     # P_EFR()
     # P_FIFO()
+    P_heuristic()
     # day_list = []
     # estimate_info_df = None
     # for d in range(4,5):

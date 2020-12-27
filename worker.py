@@ -1,7 +1,7 @@
 from influxdb import InfluxDBClient
 import pandas as pd
 from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable, DownTimeTable, DownRatioTable
-DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
+# DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 import csv
 import cv2
 import ast 
@@ -150,3 +150,32 @@ if __name__=='__main__':
     # for i in range(4,12):
     #     database = 'analy_complete_sample_quality_result_inshot_11_'+str(i)
     #     drop_measurement_if_exist(database)
+
+
+    DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage_capoo')
+    d = 
+    name = "analy_complete_sample_quality_result_inshot_11_"+str(d)
+    result = DBclient.query("SELECT * FROM "+name)
+    result_list = list(result.get_points(measurement=name))
+    json_body = []
+    json_body.append(
+            {
+                "measurement": name,
+                "tags": {
+                    "a_type": str(result_list['a_type']),
+                    "day_of_week":int(result_list['day_of_week']),
+                    "time_of_day":int(result_list['time_of_day']),
+                    "a_parameter": int(result_list['a_parameter']), 
+                    "fps": int(result_list['fps']),
+                    "bitrate": int(result_list['bitrate'])
+                },
+                "fields": {
+                    "total_frame_number":int(result_list['total_frame_number']),
+                    "name": str(result_list['name']),
+                    "time_consumption": float(result_list['time_consumption']),
+                    "target": int(result_list['target'])
+                }
+            }
+    )
+    DBclient.write_points(json_body)
+    DBclient.write_points(json_body, database='merge_storage', time_precision='ms', batch_size=400, protocol='json')

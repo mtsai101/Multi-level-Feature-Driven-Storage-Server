@@ -129,12 +129,12 @@ class WorkloadGen():
             ## if we just want to specify some videos    
 
             
-            table_name = 'sample_11_8'
+            table_name = 'sample_11_9'
             result = self.DBclient.query("select * from "+table_name)
             result_list = list(result.get_points(measurement=table_name))
 
 
-            for r in result_list:
+            for r in result_list[100:]:
                 v = r['name'].split("/")[-1]
                 info_v = v.split("_")
                 date = info_v[-2].split("-")
