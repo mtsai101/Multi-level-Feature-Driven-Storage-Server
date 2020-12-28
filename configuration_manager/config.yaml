@@ -16,8 +16,8 @@ global:
     - 100.0
     - 10.0
   database_ip: 'localhost'
-  database: 8087
-  
+  database_port: 8087
+  database_name: 'merge_storage'
   # camera2SLE: 5000
   # SLE2AP: 7000
   # SLE2camera: 6000
@@ -26,9 +26,9 @@ global:
   # DDM2DP: 7001
   # DP2agent: 6001
 
-  camera2SLE: 5002
-  SLE2AP: 7002
-  SLE2camera: 6002
+  # camera2SLE: 5002
+  # SLE2AP: 7002
+  # SLE2camera: 6002
 
   # agent2DDM: 5003
   # DDM2DP: 7003
@@ -65,7 +65,7 @@ global:
   # camera2SLE: 5014
   # SLE2AP: 7014
   # SLE2camera: 6014
-<<<<<<< HEAD
+
 
   # camera2SLE: 5016
   # SLE2AP: 7016
@@ -77,8 +77,6 @@ global:
   camera2SLE: 5020
   SLE2AP: 7020
   SLE2camera: 6020
-=======
->>>>>>> a63bce643ede0a669c3e6fe62df7eb4f3ec1e9fe
 
   # camera2SLE: 5016
   # SLE2AP: 7014

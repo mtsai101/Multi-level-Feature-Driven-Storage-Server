@@ -11,14 +11,18 @@ import time
 import sys
 import random
 from influxdb import InfluxDBClient
-DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
+import yaml
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
+
+DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', data['global']['database_name'])
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 
 
 
-delta_i= 21600# seconds
-# pre_a_selected=[4000.0,2000.0,1000.0,500.0,100.0]
+delta_i= 43200# seconds
 
 pre_a_selected=[1,24,48,96,144,0]
 pre_a_selected_tuple = []
@@ -75,20 +79,18 @@ profit_matrix_sorted = None
 pickup_length = None
 clip_number = None
 
-
 if __name__=='__main__':
     day_list = []
     frame_df = None
 
     ## Pending time duration
-    for d in range(4,5):
+    for d in range(9,10):
         name = "raw_11_"+str(d)
         name_ = "analy_complete_result_inshot_11_"+str(d)
         result = DBclient.query("SELECT * FROM "+name)
         day_list.extend(list(result.get_points(measurement=name)))
         result = DBclient.query('SELECT * FROM '+name_)
         frame_df = pd.concat([frame_df, pd.DataFrame(list(result.get_points(measurement=name_)))])
-
 
 
     clip_number = len(day_list)
@@ -124,13 +126,11 @@ if __name__=='__main__':
             profit_matrix[i][j] += illegal_ia * (frame_num_in_shot/pre_a_selected_tuple[j][0]) if pre_a_selected_tuple[j][0] !=0 else 0
             profit_matrix[i][j] += people_ia * (frame_num_in_shot/pre_a_selected_tuple[j][1]) if pre_a_selected_tuple[j][1] != 0 else 0
 
+
+
+
     argsort_time_matrix = np.argsort((-time_matrix))
 
-
-    # # print("time_matrix")
-    # print(time_matrix[13])
-    # # # print("profit_matrix")
-    # # print(profit_matrix[1])
 
     for i in range(clip_number):
         profit_matrix_sorted[i] = profit_matrix[i][argsort_time_matrix[i]]
@@ -138,15 +138,6 @@ if __name__=='__main__':
 
 
     
-    # print("time_matrix")
-
-    # print(time_matrix[1])
-    # print("profit_matrix")
-    # print(profit_matrix[1])
-
-    # print(pickup_length)
-    # print(get_time_sum())
-    # count =0
     while get_time_sum() > delta_i:
         pending_profit_list = list() 
         for c_key, l in enumerate(pickup_length):
@@ -174,5 +165,7 @@ if __name__=='__main__':
     print("time_sum", time_sum)
     print("pickup_length",pickup_length)
     print("profit_sum", profit_sum)
-
-
+    pickup_length_transformed = []
+    for i in pickup_length:
+        pickup_length_transformed.append([pre_a_selected_tuple[i][0], pre_a_selected_tuple[i][1]])
+    print("pickup_length_transformed", pickup_length_transformed)

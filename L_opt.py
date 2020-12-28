@@ -11,12 +11,18 @@ import time
 import sys
 import random
 from influxdb import InfluxDBClient
-DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
+import yaml
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
+
+
+DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', data['global']['database_name'])
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 
 
-delta_i= 3600# seconds
+delta_i= 21600# seconds
 
 
 # pre_a_selected=[4000.0,2000.0,1000.0,500.0,100.0]
@@ -65,7 +71,7 @@ if __name__=='__main__':
 
     day_list = []
     frame_df = None
-    for d in range(4,5):
+    for d in range(9,10):
         name = "raw_11_"+str(d)
         name_ = "analy_complete_result_inshot_11_"+str(d)
         result = DBclient.query("SELECT * FROM "+name)
@@ -115,7 +121,7 @@ if __name__=='__main__':
 
    
 
-    count = 0
+
     for delta in range(1,delta_i+1):
         for c in range(1, clip_number+1):
             # print("delta: %d, clip: %d"%(delta, c))
@@ -164,4 +170,8 @@ if __name__=='__main__':
     print("profit_sum", profit_sum)
     print("profit_sum_opt", opt_state[-1][-1])
 
+    pickup_length_transformed = []
+    for i in pickup_length:
+        pickup_length_transformed.append([pre_a_selected_tuple[i][0], pre_a_selected_tuple[i][1]])
+    print("pickup_length_transformed", pickup_length_transformed)
 

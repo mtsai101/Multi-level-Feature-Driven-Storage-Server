@@ -1,6 +1,6 @@
 from influxdb import InfluxDBClient
 import pandas as pd
-from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable, DownTimeTable, DownRatioTable
+from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable, DownTimeTable, DownRatioTable, Degraded_Q_IATable
 # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 import csv
 import cv2
@@ -55,11 +55,12 @@ if __name__=='__main__':
     # DBclient.write(json.dumps(result_list), params={"database":'test', "measurement":'video_in_server'}, protocol='json')
     # print(json.dumps(result_list))
 
-    # full_IATable = Full_IATable(True)
+    full_IATable = Full_IATable(True)
     # degraded_IATable = Degraded_IATable(True)
     # analyTimeTable = AnalyTimeTable(True)
     # downTimeTable = DownTimeTable(True)
-    downRatioTable = DownRatioTable(True)
+    # downRatioTable = DownRatioTable(True)
+    # degraded_Q_IATable = Degraded_Q_IATable(True)
 
 
     ## build degrade L_ia data for degrade L_ia Table
@@ -141,23 +142,6 @@ if __name__=='__main__':
     # cap = cv2.VideoCapture(path)
     # print(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
 
-<<<<<<< HEAD
-    json_body=[
-            {
-                "measurement": "test",
-                    "tags": {
-                        "a_type": str("a_type"),
-                        "bitrate": int(1000),
-                        "bitrate": int(500)
-                    },
-                    "fields": {
-                        "total_frame_number":int(17),
-                        
-                    }
-            }
-    ]
-    DBclient.write_points(json_body)
-=======
 
     ### scp files
     # for i in range(4,12):
@@ -169,31 +153,33 @@ if __name__=='__main__':
     #     drop_measurement_if_exist(database)
 
 
-    DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage_capoo')
-    d = 
-    name = "analy_complete_sample_quality_result_inshot_11_"+str(d)
-    result = DBclient.query("SELECT * FROM "+name)
-    result_list = list(result.get_points(measurement=name))
-    json_body = []
-    json_body.append(
-            {
-                "measurement": name,
-                "tags": {
-                    "a_type": str(result_list['a_type']),
-                    "day_of_week":int(result_list['day_of_week']),
-                    "time_of_day":int(result_list['time_of_day']),
-                    "a_parameter": int(result_list['a_parameter']), 
-                    "fps": int(result_list['fps']),
-                    "bitrate": int(result_list['bitrate'])
-                },
-                "fields": {
-                    "total_frame_number":int(result_list['total_frame_number']),
-                    "name": str(result_list['name']),
-                    "time_consumption": float(result_list['time_consumption']),
-                    "target": int(result_list['target'])
-                }
-            }
-    )
-    DBclient.write_points(json_body)
-    DBclient.write_points(json_body, database='merge_storage', time_precision='ms', batch_size=400, protocol='json')
->>>>>>> a63bce643ede0a669c3e6fe62df7eb4f3ec1e9fe
+    ## Move measurement from storage to merge_storage
+    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
+
+    # result = DBclient.query("SELECT * FROM analy_complete_sample_quality_result_inshot_11_6")
+    # result_list = list(result.get_points(measurement = "analy_complete_sample_quality_result_inshot_11_6"))
+    # json_body = []
+    # for i in result_list:
+    #     json_body.append(
+    #                 {
+    #                     "measurement": "analy_complete_sample_quality_result_inshot_11_6",
+    #                     "tags": {
+    #                         "a_type": str(i['a_type']),
+    #                         "day_of_week":int(i['day_of_week']),
+    #                         "time_of_day":int(i['time_of_day']),
+    #                         "a_parameter": int(i['a_parameter']), 
+    #                         "fps": int(i['fps']),
+    #                         "bitrate": int(i['bitrate'])
+    #                     },
+    #                     "fields": {
+    #                         "total_frame_number":int(i['total_frame_number']),
+    #                         "name": str(i['name']),
+    #                         "time_consumption": float(i['time_consumption']),
+    #                         "target": int(i['target'])
+    #                     }
+    #                 }
+    #     )
+
+    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')
+    # DBclient.write_points(json_body, database='merge_storage', time_precision='ms', batch_size=40000, protocol='json')
+
