@@ -1,0 +1,2 @@
+start,end,time_sum,profit_sum,profit_sum,pickup_length_transformed
+6,12,400.44257882395993,2933.5927087006985,"[[0, 0], [0, 0], [0, 0], [24, 24], [0, 0], [0, 0]]"

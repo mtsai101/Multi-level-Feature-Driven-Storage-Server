@@ -88,16 +88,9 @@ for k, i in enumerate(pickup_quality):
 # pickup_quality_knapsack = np.array(pickup_quality_knapsack)
 # sys.exit()
 
-
 if __name__=='__main__':
     opt_state = np.zeros((O_v+1, delta_d+1, clip_number+1))
-
     pickup_quality_knapsack = np.array([[[[(len(pre_d_selected)-1) for i in range(clip_number)] for i in range(clip_number+1)] for j in range(delta_d+1)] for k in range(O_v+1)])
-
-
-
-    count = 0
-    
     for o in range(1, O_v+1):
         for delta in range(1, delta_d+1):
             for c in range(1, clip_number+1):

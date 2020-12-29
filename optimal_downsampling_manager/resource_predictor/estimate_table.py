@@ -80,7 +80,7 @@ class Table:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size
                 else:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
-                return result_value / self.max_info[a_type]
+                return result_value
             else:
                 return 0
 
@@ -420,9 +420,9 @@ class Full_IATable(Table):
 
                     max_result = DBclient.query('SELECT target,target/total_frame_number FROM ' + building_table_name + ' WHERE \"a_type\"=\''+a_type+'\'')
                     max_result = list(max_result.get_points(measurement = building_table_name))
-                    max_info_value = sorted(max_result, key=lambda k :k['target_total_frame_number'],reverse=True)[0]['target_total_frame_number']
+                    # max_info_value = sorted(max_result, key=lambda k :k['target_total_frame_number'],reverse=True)[0]['target_total_frame_number']
                     max_target_value = sorted(max_result, key=lambda k :k['target'],reverse=True)[0]["target"]
-                    self.max_info[a_type] = max(self.max_info[a_type], max_info_value)
+                    # self.max_info[a_type] = max(self.max_info[a_type], max_info_value)
                     self.max_target[a_type] = max(self.max_target[a_type], max_target_value)
 
             for a_type in ANALY_LIST:
@@ -493,6 +493,13 @@ def get_context(clip_name):
     day_idx = int(day_idx.weekday() >= 5) # day_idx==0 if weekday else day_idx==1
     time_idx = int(int(video_name_list[-1].split('-')[0]))
     return day_idx, time_idx
+
+    
+def get_month_and_day(clip_name):
+    date =  clip_name.split('/')[-2].split('_')[0].split('-')
+    return int(date[1]), int(date[2])
+
+
 
 def drop_measurement_if_exist(table_name):
     result = DBclient.query('SELECT * FROM '+table_name)
