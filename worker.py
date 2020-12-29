@@ -55,7 +55,7 @@ if __name__=='__main__':
     # DBclient.write(json.dumps(result_list), params={"database":'test', "measurement":'video_in_server'}, protocol='json')
     # print(json.dumps(result_list))
 
-    # full_IATable = Full_IATable(True)
+    full_IATable = Full_IATable(True)
     # degraded_IATable = Degraded_IATable(True)
     # analyTimeTable = AnalyTimeTable(True)
     # downTimeTable = DownTimeTable(True)
@@ -213,23 +213,23 @@ if __name__=='__main__':
 
 
     ### Update data_points testing
-    DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')
-    name= "water"
-    r = list(DBclient.query("SELECT * FROM meters where \"meter\"=\'"+name+"\'"))[0][0]
-    print(r)
+    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')
+    # name= "water"
+    # r = list(DBclient.query("SELECT * FROM meters where \"meter\"=\'"+name+"\'"))[0][0]
+    # print(r)
 
-    json_body = [
-                {
-                    "measurement":"meters",
-                    "tags": {
-                        "meter": name,
-                        "place":"6F-1"
-                    },
-                    "time":r['time'],
-                    "fields": {
-                        "consumption":8.9,
-                        "volume":112.456
-                    }
-                }
-            ]
-    DBclient.write_points(json_body, time_precision='ms')
+    # json_body = [
+    #             {
+    #                 "measurement":"meters",
+    #                 "tags": {
+    #                     "meter": name,
+    #                     "place":"6F-1"
+    #                 },
+    #                 "time":r['time'],
+    #                 "fields": {
+    #                     "consumption":8.9,
+    #                     "volume":112.456
+    #                 }
+    #             }
+    #         ]
+    # DBclient.write_points(json_body, time_precision='ms')

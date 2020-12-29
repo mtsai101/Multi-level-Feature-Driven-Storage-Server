@@ -32,27 +32,7 @@ class Table:
         self.down_result_table = None
         self.start_day = 4
         self.end_day = 9
-        
 
-    # def get_latest_value(self, day_idx, time_idx, a_type='None', a_parameter=-1, fps=24, bitrate=1000):
-    #     # day_idx, time_idx = get_context(clip_name)
-    #     """
-    #     step1 : check the very time is in weekday or weekend
-    #     step2 : check nearest, switch to another weektime every time slot.
-    #     """
-    #     for r in range(0,11): # 
-    #         for w in range(2):# check the corresponding time in weekend
-    #             for i in range(2*r,2*r+2): # check neighbor which time difference is +1 or -1 
-    #                 step = int(i/2) * pow((-1),i)
-    #                 new_time_idx = (time_idx + step + self.window_size) % self.window_size
-                    
-    #                 target_col, estimation_point = self.make_query(day_idx,new_time_idx, a_type, a_parameter, fps, bitrate)
-    #                 if estimation_point.shape[0]==self.window_size:
-    #                     estimation = estimation_point.loc[:,target_col].mean()
-    #                     return estimation
-                    
-    #             day_idx = (day_idx+1) % 2
-    #     return 0.0
 
     def get_latest_value(self, day_idx, time_idx, a_type='None', a_parameter=-1, fps=24, bitrate=1000):
         return_value = self.make_query(day_idx, time_idx, a_type, a_parameter, fps, bitrate)
@@ -80,7 +60,7 @@ class Table:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size
                 else:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
-                return result_value
+                return result_value/self.max_info[a_type]
             else:
                 return 0
 
@@ -420,11 +400,12 @@ class Full_IATable(Table):
 
                     max_result = DBclient.query('SELECT target,target/total_frame_number FROM ' + building_table_name + ' WHERE \"a_type\"=\''+a_type+'\'')
                     max_result = list(max_result.get_points(measurement = building_table_name))
-                    # max_info_value = sorted(max_result, key=lambda k :k['target_total_frame_number'],reverse=True)[0]['target_total_frame_number']
+                    max_info_value = sorted(max_result, key=lambda k :k['target_total_frame_number'],reverse=True)[0]['target_total_frame_number']
                     max_target_value = sorted(max_result, key=lambda k :k['target'],reverse=True)[0]["target"]
-                    # self.max_info[a_type] = max(self.max_info[a_type], max_info_value)
+                    self.max_info[a_type] = max(self.max_info[a_type], max_info_value)
                     self.max_target[a_type] = max(self.max_target[a_type], max_target_value)
 
+            drop_measurement_if_exist("MaxAnalyticTargetNumber")
             for a_type in ANALY_LIST:
                 json_body = [
                                 {
@@ -438,7 +419,6 @@ class Full_IATable(Table):
                                 }
                             ]
                 DBclient.write_points(json_body)      
-
 
             ## influxdb can not update, only we can do is deleting the previous one
             print("[INFO] Updating the Full_IATable models...")

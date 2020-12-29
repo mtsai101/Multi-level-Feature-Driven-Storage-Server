@@ -17,6 +17,7 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 
 
 DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', data['global']['database_name'])
+result_DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', "exp_storage")
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 
@@ -199,7 +200,7 @@ if __name__=='__main__':
                                     }
                                 }
                             ]
-                DBclient.write_points(json_body)
+                result_DBclient.write_points(json_body)
 
             json_body = [
                             {
@@ -215,4 +216,4 @@ if __name__=='__main__':
                                 }
                             }
                         ]
-            DBclient.write_points(json_body)
+            result_DBclient.write_points(json_body)

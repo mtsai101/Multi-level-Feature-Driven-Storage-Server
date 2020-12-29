@@ -5,7 +5,7 @@ import os
 from threading import Lock
 from influxdb import InfluxDBClient
 from optimal_downsampling_manager.decision_type import Decision
-from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, DownTimeTable, DownRatioTable, Degraded_Q_IATable
+# from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, DownTimeTable, DownRatioTable, Degraded_Q_IATable
 
 import time
 import sys
@@ -89,74 +89,95 @@ for k, i in enumerate(pickup_quality):
 # sys.exit()
 
 if __name__=='__main__':
+    s_=0
+    s1_=0; s2_=0; s3_=0
     opt_state = np.zeros((O_v+1, delta_d+1, clip_number+1))
     pickup_quality_knapsack = np.array([[[[(len(pre_d_selected)-1) for i in range(clip_number)] for i in range(clip_number+1)] for j in range(delta_d+1)] for k in range(O_v+1)])
+    min_time =np.zeros(clip_number)
+    min_space = np.zeros(clip_number)
+    for c in range(clip_number):
+        min_time[c] = time_matrix[c].min()
+        min_space[c] = space_matrix[c].min()
+    
+    
+    s = time.time()
     for o in range(1, O_v+1):
         for delta in range(1, delta_d+1):
             for c in range(1, clip_number+1):
-
-                remain_time_array = np.subtract(delta, time_matrix[c-1])
-                remain_space_array = np.subtract(o, space_matrix[c-1])
-                
-                print("remain_time_array", remain_time_array)
-                print("remain_space_array",remain_space_array)
-                candidatad_quality_arg_time = np.argwhere(remain_time_array>=0).reshape(-1)
-                candidatad_quality_arg_space = np.argwhere(remain_space_array>=0).reshape(-1)
-
-                candidatad_quality_arg = np.intersect1d(candidatad_quality_arg_time, candidatad_quality_arg_space)
-
-                
-                ## Don't choose better quality
-                og_quality = pickup_quality[c-1]
-                invalaid_quality = np.where(candidatad_quality_arg<og_quality)
-                candidatad_quality_arg = np.delete(candidatad_quality_arg, invalaid_quality)
-                print("candidatad_quality_arg", candidatad_quality_arg)
-                
-                # if some clip has non zero execution time
-                if candidatad_quality_arg.shape[0]>0:
-                    remain_time_idx = remain_time_array[candidatad_quality_arg].reshape(-1)
-                    remain_space_idx = remain_space_array[candidatad_quality_arg].reshape(-1)
-                    print("remain_time_idx", remain_time_idx)
-                    print("remain_space_idx",remain_space_idx)
+                s1 = time.time()
+                if delta>min_time[c-1] and o>min_space[c-1]:
                     
-                    # print(profit_matrix[c-1][candidatad_quality_arg])
-                    tmp_profit_matrix = list()
-                    for q_i in range(len(candidatad_quality_arg)):
-                        tmp_profit_matrix.append(opt_state[remain_space_idx[q_i]][remain_time_idx[q_i]][c-1] + profit_matrix[c-1][candidatad_quality_arg[q_i]])
+                    remain_time_array = np.subtract(delta, time_matrix[c-1])
+                    remain_space_array = np.subtract(o, space_matrix[c-1])
                     
+                    # print("remain_time_array", remain_time_array)
+                    # print("remain_space_array",remain_space_array)
+                    candidatad_quality_arg_time = np.argwhere(remain_time_array>=0)
+                    candidatad_quality_arg_space = np.argwhere(remain_space_array>=0)
+
+                    candidatad_quality_arg = np.intersect1d(candidatad_quality_arg_time, candidatad_quality_arg_space)
+
+                    
+                    ## Don't choose better quality
+                    if pickup_quality[c-1]!=0:
+                        og_quality = pickup_quality[c-1]
+                        invalaid_quality = np.where(candidatad_quality_arg<og_quality)
+                        candidatad_quality_arg = np.delete(candidatad_quality_arg, invalaid_quality)
                     
 
-                    tmp_max_idx = np.argmax(np.array(tmp_profit_matrix))
-                    tmp_max = tmp_profit_matrix[tmp_max_idx]
-  
+                    # print("candidatad_quality_arg", candidatad_quality_arg)
+                    # if some clip has non zero execution time
+                    if candidatad_quality_arg.shape[0]>0:
+                        remain_time_idx = remain_time_array[candidatad_quality_arg].reshape(-1)
+                        remain_space_idx = remain_space_array[candidatad_quality_arg].reshape(-1)
+                        # print("remain_time_idx", remain_time_idx)
+                        # print("remain_space_idx",remain_space_idx)
+                        
+                        # print(profit_matrix[c-1][candidatad_quality_arg])
+                        tmp_profit_matrix = list()
+                        
+                        for q_i in range(len(candidatad_quality_arg)):
+                            tmp_profit_matrix.append(opt_state[remain_space_idx[q_i]][remain_time_idx[q_i]][c-1] + profit_matrix[c-1][candidatad_quality_arg[q_i]])
+                        
+
+                        tmp_max_idx = np.argmax(np.array(tmp_profit_matrix))
+                        tmp_max = tmp_profit_matrix[tmp_max_idx]
+    
+                    else:
+                        tmp_max = 0
                 else:
                     tmp_max = 0
+                s1_ = time.time()-s1+s1_
 
-                print("o:",o," delta:", delta, "c:", c)
-                print("Before update:",c, pickup_quality_knapsack[o][delta][c-1])
-
+                # print("o:",o," delta:", delta, "c:", c)
+                # print("Before update:",c, pickup_quality_knapsack[o][delta][c-1])
+                s3 = time.time()
                 if opt_state[o][delta][c-1] >= tmp_max: # not pickup any quality for c
                     opt_state[o][delta][c] = opt_state[o][delta][c-1]
                     pickup_quality_knapsack[o][delta][c] = pickup_quality_knapsack[o][delta][c-1]
-                    print("not pickup any quality for c")
-                    print("remain state:", pickup_quality_knapsack[o][delta][c])
-                    print("quality no change:", opt_state[o][delta][c])
+                    # print("not pickup any quality for c")
+                    # print("remain state:", pickup_quality_knapsack[o][delta][c])
+                    # print("quality no change:", opt_state[o][delta][c])
                 else: # pick the length of c
                     opt_state[o][delta][c] = tmp_max
 
                     pickup_quality_knapsack[o][delta][c] = pickup_quality_knapsack[remain_space_idx[tmp_max_idx]][remain_time_idx[tmp_max_idx]][c-1]
-                    print("prev space %d, prev time %d"%(remain_space_idx[tmp_max_idx],remain_time_idx[tmp_max_idx]))
-                    print("prev quality", pickup_quality_knapsack[remain_space_idx[tmp_max_idx]][remain_time_idx[tmp_max_idx]][c-1])
+                    # print("prev space %d, prev time %d"%(remain_space_idx[tmp_max_idx],remain_time_idx[tmp_max_idx]))
+                    # print("prev quality", pickup_quality_knapsack[remain_space_idx[tmp_max_idx]][remain_time_idx[tmp_max_idx]][c-1])
                     pickup_quality_knapsack[o][delta][c][c-1] = candidatad_quality_arg[tmp_max_idx]
-                    print("update quality", pickup_quality_knapsack[o][delta][c][c-1])
-                    count+=1
-                print("quality sum", opt_state[o][delta][c])
-                print("After update:", c, pickup_quality_knapsack[o][delta][c])
+                    # print("update quality", pickup_quality_knapsack[o][delta][c][c-1])
+                # print("quality sum", opt_state[o][delta][c])
+                # print("After update:", c, pickup_quality_knapsack[o][delta][c])
                 # if np.sum(pickup_quality_knapsack[o][delta][c])<=40 and count ==10:
                 #     sys.exit()
-            
+                s3_ = time.time()-s3+s3_
+    s_ = time.time()- s +s_
                 
-
+    print("For loop partial",str(s1_/s_))
+    print("For loop partial",str(s3_/s_))
+    print("s1:",s1_)
+    print("s3:",s3_)
+    print("s:",s_)
     pickup_quality = pickup_quality_knapsack[-1][-1][-1].astype(int)
 
     time_sum = 0

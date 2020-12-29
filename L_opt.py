@@ -18,6 +18,7 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 
 
 DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', data['global']['database_name'])
+result_DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', "exp_storage")
 
 ANALY_LIST=["illegal_parking0","people_counting"]
 
@@ -134,7 +135,7 @@ def L_opt(pickup_length):
 
 if __name__=='__main__':
 
-    for d in range(5,16): 
+    for d in range(4,5): 
         for start in range(0,23,6):
             name = "raw_11_"+str(d)
             result = DBclient.query("SELECT * FROM "+name)
@@ -206,7 +207,7 @@ if __name__=='__main__':
                                     }
                                 }
                             ]
-                DBclient.write_points(json_body)
+                result_DBclient.write_points(json_body)
 
             json_body = [
                             {
@@ -222,7 +223,7 @@ if __name__=='__main__':
                                 }
                             }
                         ]
-            DBclient.write_points(json_body)
+            result_DBclient.write_points(json_body)
 
    
 
