@@ -122,11 +122,19 @@ def L_heuristic(pickup_length):
     return time_sum, profit_sum, pickup_length_transformed
         
 
-
+def drop_measurement_if_exist(table_name):
+    result = result_DBclient.query('SELECT * FROM '+table_name)
+    result_point = list(result.get_points(measurement=table_name))
+    if len(result_point)>0:
+        result_DBclient.query('DROP MEASUREMENT '+table_name)
 
 
 if __name__=='__main__':
     
+
+    drop_measurement_if_exist('L_heuristic_length')
+    drop_measurement_if_exist('L_heuristic_exp_time_profit')
+
     for d in range(4,16): 
         for start in range(0,23,6):
             name = "raw_11_"+str(d)
@@ -183,8 +191,9 @@ if __name__=='__main__':
                 profit_matrix[i] += pca_value
                 
 
-
+            s = time.time()
             time_sum, profit_sum, pickup_length_transformed = L_heuristic(pickup_length)
+            exec_time = time.time() - s
 
             ## write to database
             for idx, day in enumerate(day_list):
@@ -212,7 +221,8 @@ if __name__=='__main__':
                                 },
                                 "fields": {
                                     "time_sum":time_sum,
-                                    "profit_sum":profit_sum
+                                    "profit_sum":profit_sum,
+                                    "execution_time":exec_time
                                 }
                             }
                         ]

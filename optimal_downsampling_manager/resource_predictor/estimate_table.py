@@ -184,12 +184,13 @@ class Table:
                 result_value=0
                 full_sorted_list = sorted(full_result_list, key=lambda k :k['name'], reverse=True)
                 sample_sorted_list = sorted(sample_result_list, key=lambda k :k['name'], reverse=True)
-            
+                
                 length = min(len(full_sorted_list), self.window_size)
                 for i in range(length):
                     if full_sorted_list[i]['target'] and sample_sorted_list[i]['target']:
                         if sample_sorted_list[i]['target'] > full_sorted_list[i]['target']:
                             print("larger than:", sample_sorted_list[i], full_sorted_list[i])
+
                         result_value += sample_sorted_list[i]['target']/full_sorted_list[i]['target']
                         
                 return result_value/length

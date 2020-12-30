@@ -5,7 +5,7 @@ import os
 from threading import Lock
 from influxdb import InfluxDBClient
 from optimal_downsampling_manager.decision_type import Decision
-from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context,  AnalyTimeTable
+from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, AnalyTimeTable, drop_measurement_if_exist
 
 import time
 import sys
@@ -133,9 +133,20 @@ def L_opt(pickup_length):
     return time_sum, profit_sum, pickup_length_transformed
     
 
+def drop_measurement_if_exist(table_name):
+    result = result_DBclient.query('SELECT * FROM '+table_name)
+    result_point = list(result.get_points(measurement=table_name))
+    if len(result_point)>0:
+        result_DBclient.query('DROP MEASUREMENT '+table_name)
+
+
 if __name__=='__main__':
 
-    for d in range(4,5): 
+    drop_measurement_if_exist('L_opt_exp_length')
+    drop_measurement_if_exist('L_opt_exp_time_profit')
+
+
+    for d in range(4,16): 
         for start in range(0,23,6):
             name = "raw_11_"+str(d)
             result = DBclient.query("SELECT * FROM "+name)
@@ -190,8 +201,9 @@ if __name__=='__main__':
         
             time_matrix = np.ceil(time_matrix).astype(int)
 
-
+            s = time.time()
             time_sum, profit_sum, pickup_length_transformed = L_opt(pickup_length)
+            exec_time = time.time() - s
 
             ## write to database
             for idx, day in enumerate(day_list):
@@ -219,7 +231,8 @@ if __name__=='__main__':
                                 },
                                 "fields": {
                                     "time_sum":time_sum,
-                                    "profit_sum":profit_sum
+                                    "profit_sum":profit_sum,
+                                    "execution_time":exec_time
                                 }
                             }
                         ]

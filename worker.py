@@ -55,12 +55,12 @@ if __name__=='__main__':
     # DBclient.write(json.dumps(result_list), params={"database":'test', "measurement":'video_in_server'}, protocol='json')
     # print(json.dumps(result_list))
 
-    full_IATable = Full_IATable(True)
+    # full_IATable = Full_IATable(True)
     # degraded_IATable = Degraded_IATable(True)
     # analyTimeTable = AnalyTimeTable(True)
     # downTimeTable = DownTimeTable(True)
     # downRatioTable = DownRatioTable(True)
-    # degraded_Q_IATable = Degraded_Q_IATable(True)
+    degraded_Q_IATable = Degraded_Q_IATable(True)
 
 
     ## build degrade L_ia data for degrade L_ia Table
@@ -233,3 +233,33 @@ if __name__=='__main__':
     #             }
     #         ]
     # DBclient.write_points(json_body, time_precision='ms')
+
+
+
+    ### Convert video path from ../converted/... to original
+    # DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'merge_storage')
+    # for d in range(5, 16):
+    #     result = list(DBclient.query("SELECT * FROM analy_complete_sample_quality_result_inshot_11_"+str(d)))[0]
+    #     for r in result:
+    #         new_path = os.path.join("./storage_server_volume/SmartPole/Pole1", "/".join(r['name'].split("/")[-2:]))
+    #         json_body = [
+    #                 {
+    #                     "measurement": "sample_quality_alltarget_inshot_11_"+str(d),
+    #                     "tags": {
+    #                         "a_type": str(r['a_type']),
+    #                         "day_of_week":int(r['day_of_week']),
+    #                         "time_of_day":int(r['time_of_day']),
+    #                         "a_parameter": int(r['a_parameter']), 
+    #                         "fps": int(r['fps']),
+    #                         "bitrate": int(r['bitrate'])
+    #                     },
+    #                     "fields": {
+    #                         "total_frame_number":int(r['total_frame_number']),
+    #                         "name": str(new_path),
+    #                         "time_consumption": float(r['time_consumption']),
+    #                         "target": int(r['target'])
+    #                     }
+    #                 }
+    #             ]
+    #         DBclient.write_points(json_body)
+            

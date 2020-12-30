@@ -16,7 +16,7 @@ global:
     - 100.0
     - 10.0
   database_ip: 'localhost'
-  database_port: 8087
+  database_port: 8086
   database_name: 'merge_storage'
   # camera2SLE: 5000
   # SLE2AP: 7000
