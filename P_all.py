@@ -246,11 +246,11 @@ def P_heuristic(pickup_quality):
 
     
 
-    argsort_space_matrix = np.argsort((-space_matrix))
+    argsort_matrix = np.argsort((-space_matrix))
     for i in range(clip_number):
-        time_matrix_sorted[i] = time_matrix[i][argsort_space_matrix[i]]
-        space_matrix_sorted[i] = space_matrix[i][argsort_space_matrix[i]]
-        profit_matrix_sorted[i] = profit_matrix[i][argsort_space_matrix[i]]
+        time_matrix_sorted[i] = time_matrix[i][argsort_matrix[i]]
+        space_matrix_sorted[i] = space_matrix[i][argsort_matrix[i]]
+        profit_matrix_sorted[i] = profit_matrix[i][argsort_matrix[i]]
 
 
 
@@ -262,7 +262,7 @@ def P_heuristic(pickup_quality):
         if s>0 and pickup_quality[c] < profit_matrix_sorted.shape[1]:
             profit_list.append((c, profit_matrix_sorted[c][q]/s)) 
 
-    while space_sum > O_v or time_sum < delta_d:
+    while space_sum > O_v or time_sum>delta_d:
         
         victim_c = min(profit_list, key= lambda x: x[1])
         # print(profit_list)
@@ -271,15 +271,15 @@ def P_heuristic(pickup_quality):
         c = victim_c[0]
         profit_list.remove(victim_c)
         d = pickup_quality[c] + 1
-        
-        
+
         if pickup_quality[c]==space_matrix_sorted.shape[1]-1:
             print("the victim can not be downsample anymore")
             continue
 
         
         space_sum = space_sum - space_matrix_sorted[c][pickup_quality[c]] + space_matrix_sorted[c][d] 
-        
+   
+
         time_sum = 0
         for t_key,v in enumerate(pickup_quality):
             time_sum += time_matrix_sorted[t_key][v]
@@ -303,7 +303,7 @@ def P_heuristic(pickup_quality):
 
     # Convert to the correct order
     for k_i, i in enumerate(pickup_quality):
-        pickup_quality[k_i] = argsort_space_matrix[k_i][i]
+        pickup_quality[k_i] = argsort_matrix[k_i][i]
         
 
     time_sum = get_time_sum(pickup_quality, time_matrix_sorted) 
@@ -558,19 +558,18 @@ def main(args):
             target_degraded_q_row = Degraded_Q_IATable.loc[(Degraded_Q_IATable['day_of_week'] == str(day_idx)) & (Degraded_Q_IATable['time_of_day'] == str(time_idx))]
             pca_value = PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value']
 
-
             for j in range(time_matrix.shape[1]-1):
-                if pickup_quality[i] == j:
+                if pickup_quality[i] == j: # Equal the quality itself
                     down_time = 0
                     down_ratio = 1
                     peo_degraded_Q_ratio = 1
                     ill_degraded_Q_ratio = 1
-                elif pickup_quality[i] > j:
+                elif pickup_quality[i] > j: ## Avoid use higher quality
                     down_time = MAX_INT
                     down_ratio = MAX_INT
                     peo_degraded_Q_ratio = -MAX_INT
                     ill_degraded_Q_ratio = -MAX_INT
-                else:
+                else: # Downsample videos
                     down_time = target_time_row.loc[(target_time_row['fps'] == str(pre_d_selected[j][0])) & (target_time_row['bitrate'] == str(pre_d_selected[j][1]))]['value']
                     down_ratio = target_ratio_row.loc[(target_time_row['fps'] == str(pre_d_selected[j][0])) & (target_ratio_row['bitrate'] == str(pre_d_selected[j][1]))]['value']
                     peo_degraded_Q_ratio = target_degraded_q_row.loc[(target_degraded_q_row['fps'] == str(pre_d_selected[j][0])) & (target_degraded_q_row['bitrate'] == str(pre_d_selected[j][1])) & (target_degraded_q_row['a_type'] == 'people_counting')]['value'].iloc[0]
@@ -661,8 +660,8 @@ def main(args):
                         ]
                 result_DBclient.write_points(json_body, time_precision='ms') ## Note that the time precision should be ms, or it will be a new insertion
                 
-        trigger_month, trigger_day = get_context(day_list[-1]['name'])
-        _, trigger_hour = get_month_and_day(day_list[-1]['name'])
+        _, trigger_hour = get_context(day_list[-1]['name'])
+        trigger_month, trigger_day = get_month_and_day(day_list[-1]['name'])
         ## Get the result total_video_size, this value will be reuse in next iteration!
         total_video_size= list(result_DBclient.query("SELECT sum(size) FROM video_in_server_"+algo))[0][0]['sum']
         total_video_ia= list(result_DBclient.query("SELECT sum(ia) FROM video_in_server_"+algo))[0][0]['sum']
