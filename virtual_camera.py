@@ -128,11 +128,7 @@ class WorkloadGen():
             ## if we just want to specify some videos    
 
             
-<<<<<<< HEAD
-            table_name = 'sample_11_5'
-=======
             table_name = 'sample_11_9'
->>>>>>> a63bce643ede0a669c3e6fe62df7eb4f3ec1e9fe
             result = self.DBclient.query("select * from "+table_name)
             result_list = list(result.get_points(measurement=table_name))
 
