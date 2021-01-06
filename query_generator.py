@@ -23,7 +23,7 @@ result = DBclient.query('SELECT * FROM visual_features_entropies_PCA_normalized'
 PCATable = pd.DataFrame(list(result.get_points(measurement="visual_features_entropies_PCA_normalized")))
 
 
-alog_list = ['EF','EFR','FIFO','heuristic','opt']
+alog_list = ['FIFO']
 if __name__=='__main__':
     start_day = 9
     end_day = 16
@@ -48,13 +48,14 @@ if __name__=='__main__':
         full_length_sample_quality_info_df = pd.concat([full_length_sample_quality_info_df, pd.DataFrame(list(result.get_points(measurement='sample_quality_alltarget_inshot_11_'+str(r))))])
         result = DBclient.query('SELECT * FROM analy_complete_result_inshot_11_'+str(r))
         full_info_df = pd.concat([full_info_df, pd.DataFrame(list(result.get_points(measurement='analy_complete_result_inshot_11_'+str(r))))])
-
+    
     for algo in alog_list:
         result = resultDBclient.query("SELECT * FROM video_in_server_"+algo)
         video_in_server = pd.DataFrame(list(result.get_points(measurement = "video_in_server_"+algo)))
         query_result_ia = []
         for q in query_video_list:
             # information amount of original video
+            print("Querying",q['name'],"...")
             origin_video_info = (full_info_df.loc[(full_info_df['name']==q['name']) & (full_info_df['a_type']=='illegal_parking0')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='illegal_parking0')]['value'].iloc[0]) 
             origin_video_info += (full_info_df.loc[(full_info_df['name']==q['name']) & (full_info_df['a_type']=='people_counting')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='people_counting')]['value'].iloc[0]) 
             origin_video_info += PCATable.loc[PCATable['name']==q['name']].iloc[0]['value']
@@ -87,14 +88,14 @@ if __name__=='__main__':
                     preserved_video_info = preserved_video_info_ill+ preserved_video_info_peo + preserved_video_info_pca
 
                 info_error = abs(origin_video_info-preserved_video_info)
+                print("Find downsampled video...")
             else:
-                count += 1
+                print("Queried video has been deleted...")
                 info_error = origin_video_info
             # print(info_error)
 
             query_result_ia.append(info_error)
-
-        with open('./query_ia_error'+algo+'.csv','w',newline='') as f:
+        with open('./query_ia_error_'+algo+'.csv','w',newline='') as f:
             writer = csv.writer(f)
             for qe in query_result_ia:
                 writer.writerow([qe])
