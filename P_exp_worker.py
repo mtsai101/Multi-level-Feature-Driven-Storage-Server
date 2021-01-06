@@ -8,6 +8,7 @@ from optimal_downsampling_manager.resource_predictor.estimate_table import get_c
 from influxdb import InfluxDBClient
 DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', "exp_storage")
 algo_list = ['heuristic', 'FIFO', 'EF', 'EFR', 'opt']
+
 for algo in algo_list:
     ## Hour <--> IA
     result = DBclient.query("SELECT * FROM log_every_hour_"+algo)

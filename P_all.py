@@ -11,7 +11,7 @@ import time
 import time
 import sys
 import random
-
+import csv
 ###  preselected matrix
 # time_matrix = np.array([
 #     [0,45,24,12,10,3,2,0],
@@ -220,7 +220,117 @@ def P_FIFO(pickup_quality, space_sum):
         pickup_quality_transformed.append([pre_d_selected[i][0], pre_d_selected[i][1]])
 
     return time_sum, pickup_quality_transformed
+   
+  
+def P_heuristic_log(pickup_quality, space_sum, log, day_list):
+    
+    global time_matrix, space_matrix, profit_matrix, pre_d_selected, clip_number, O_i, O_v, delta_d
+    og_total_video_size = space_sum
+    time_sum = 0
+    time_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
+    space_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
+    profit_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
 
+    argsort_matrix = np.argsort((-space_matrix))
+    for i in range(clip_number):
+        time_matrix_sorted[i] = time_matrix[i][argsort_matrix[i]]
+        space_matrix_sorted[i] = space_matrix[i][argsort_matrix[i]]
+        profit_matrix_sorted[i] = profit_matrix[i][argsort_matrix[i]]
+
+    profit_list = []
+    for c, q in enumerate(pickup_quality):
+        s = space_matrix_sorted[c][q]
+        if s>0 and pickup_quality[c] < len(pre_d_selected)-1:
+            profit_list.append((c, profit_matrix_sorted[c][q]/s)) 
+
+    while space_sum > O_v or time_sum > delta_d:
+        victim_c = min(profit_list, key= lambda x: x[1])
+
+        c = victim_c[0]
+        profit_list.remove(victim_c)
+        d = pickup_quality[c] + 1
+
+        if pickup_quality[c]==space_matrix_sorted.shape[1]-1:
+            print("the victim can not be downsample anymore")
+            continue
+
+        space_sum = space_sum - space_matrix_sorted[c][pickup_quality[c]] + space_matrix_sorted[c][d] 
+        ## logging
+        if log>-1:
+            try:
+                with open('experiments/expect_heu_log.csv','a') as file:
+                    csv_writer = csv.writer(file)
+                    csv_writer.writerow([space_sum])
+
+                b_fps, b_bitrate = ((np.array(pre_d_selected))[argsort_matrix[c]])[pickup_quality[c]]
+                if b_fps!=24 and b_bitrate!=1000: 
+                    down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(b_fps)+"\' AND \"bitrate\"=\'"+str(b_bitrate)+"\'"))[0][0]
+                    before_size = down_result['raw_size'] * down_result['ratio']
+                else:
+                    down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(b_fps)+"\' AND \"bitrate\"=\'"+str(500)+"\'"))[0][0]
+                    before_size = down_result['raw_size']
+            except Exception as e:
+                print("before:",b_fps, b_bitrate)
+                print(e)
+                sys.exit()
+
+            try:
+                r_fps, r_bitrate = ((np.array(pre_d_selected))[argsort_matrix[c]])[d]
+                if r_fps!=0 and r_bitrate!=0:
+                    down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(r_fps)+"\' AND \"bitrate\"=\'"+str(r_bitrate)+"\'"))[0][0]
+                    after_size = down_result['raw_size'] * down_result['ratio']
+                else:
+                    after_size = 0
+
+                with open('experiments/real_heu_log.csv','a') as file:
+                    og_total_video_size = og_total_video_size - before_size + after_size
+                    csv_writer = csv.writer(file)
+                    csv_writer.writerow([og_total_video_size])
+            except Exception as e:
+                print("after:", r_fps, r_bitrate)
+                print(e)
+                sys.exit()
+
+        
+
+
+
+        time_sum = 0
+        for t_key,v in enumerate(pickup_quality):
+            time_sum += time_matrix_sorted[t_key][v]
+
+
+        s = space_matrix_sorted[c][d]
+        pickup_quality[c] = d
+        if s > 0: ## make sure the last one is zero and not divide zero
+            profit_list.append((c, profit_matrix_sorted[c][d]/s)) 
+
+        if len(profit_list) == 0:
+            print("np video")
+            break
+
+        if space_sum < O_v:
+            break
+
+    
+    # Convert to the correct order
+    for k_i, i in enumerate(pickup_quality):
+        pickup_quality[k_i] = argsort_matrix[k_i][i]
+        
+    #space should follow the real result
+    time_sum = get_time_sum(pickup_quality, time_matrix_sorted) 
+
+    print("pickup_quality",pickup_quality)
+    print("except_time_sum", time_sum)
+    print("expect space_sum:", space_sum)
+
+    pickup_quality_transformed = []
+    for c_id, i in enumerate(pickup_quality):
+        transformed_pre_d_selected = ((np.array(pre_d_selected))[argsort_matrix[c_id]])
+        pickup_quality_transformed.append([transformed_pre_d_selected[i][0], transformed_pre_d_selected[i][1]])
+
+    return time_sum, pickup_quality_transformed
+    
 def P_heuristic(pickup_quality, space_sum):
 
     global time_matrix, space_matrix, profit_matrix, pre_d_selected, clip_number, O_i, O_v, delta_d
@@ -424,6 +534,13 @@ def log_database(algo, day, hour, total_video_size):
     result_DBclient.write_points(json_body)
 
 def main(args):
+
+    log = 0
+    if os.path.isfile('experiments/expect_heu_log.csv'):
+        os.remove('experiments/expect_heu_log.csv')
+    if os.path.isfile('experiments/real_heu_log.csv'):
+        os.remove('experiments/real_heu_log.csv')
+
     global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number, algo, O_i, O_v, delta_d, scale_ratio
     O_v = int(args.ov); delta_d = int(args.delta); O_i = int(args.oi); algo = str(args.algo); scale_ratio = float(args.scale)
     pre_d_selected = [[24,1000],[24,500],[12,500],[12,100],[6,100],[6,10],[1,10],[0,0]]
@@ -578,7 +695,9 @@ def main(args):
         elif algo=='FIFO':
             time_sum, pickup_quality_transformed = P_FIFO(pickup_quality,total_video_size)
         elif algo=='heuristic':
-            time_sum, pickup_quality_transformed = P_heuristic(pickup_quality, total_video_size)
+            time_sum, pickup_quality_transformed = P_heuristic_log(pickup_quality, total_video_size, log, day_list)
+            log += 1
+            # time_sum, pickup_quality_transformed = P_heuristic(pickup_quality, total_video_size)
         elif algo=='opt':
             time_sum, pickup_quality_transformed = P_opt(pickup_quality)
         else:
