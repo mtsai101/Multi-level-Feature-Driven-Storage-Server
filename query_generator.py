@@ -23,13 +23,13 @@ result = DBclient.query('SELECT * FROM visual_features_entropies_PCA_normalized'
 PCATable = pd.DataFrame(list(result.get_points(measurement="visual_features_entropies_PCA_normalized")))
 
 
-alog_list = ['FIFO']
+alog_list = ['EF','EFR','FIFO','heuristic','opt', 'approx']
 if __name__=='__main__':
     start_day = 9
-    end_day = 16
+    end_day = 14
     size  = (end_day-start_day+1)
-    poisson_peo_rate = np.random.poisson(5,size) # 10 request / 24 hour 
-    poisson_ill_rate = np.random.poisson(5,size) # 10 request / 24 hour 
+    poisson_peo_rate = np.random.poisson(8,size) # 10 request / 24 hour 
+    poisson_ill_rate = np.random.poisson(8,size) # 10 request / 24 hour 
 
     query_video_list = []
 

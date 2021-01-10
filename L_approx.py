@@ -79,42 +79,58 @@ def L_approx(pickup_length):
 
     global time_matrix, profit_matrix, pre_a_selected_tuple, clip_number, delta_i
     time_matrix = time_matrix.astype(float); profit_matrix = profit_matrix.astype(float)
-    eplison = 0.6; low_bound = profit_matrix.max(); upper_bound = clip_number * low_bound
-    x = upper_bound/2
-    
-    threshold = (0.8 * x / delta_i)
-    time_matrix += 0.0000001
+    eplison = 0.6; low_bound = profit_matrix.max(); up_bound = clip_number * low_bound
+    x = up_bound/2
+    time_matrix += 1
     ratio_matrix = profit_matrix/time_matrix
-
+    ratio_matrix[:,-1] = 0
+    prev_x = 0
     while True:
+        threshold = (0.8 * x / delta_i)
+        print("upper bound: ", up_bound, "low bound: ", low_bound)
         J = list()
         for c in range(clip_number):
-            cancadiated = np.where(ratio_matrix[c]>threshold)
-            if cancadiated[0].shape[0]>0:
-                cancadiated_idx = np.argmax(cancadiated[0])
-                J.append([cancadiated_idx, profit_matrix[c][cancadiated_idx]])
+            candidated = np.where(ratio_matrix[c]>threshold)[0]
+            if candidated.shape[0]>0:
+                candidated_idx = np.argmax((ratio_matrix[c])[candidated])
+                select_length_idx = candidated[candidated_idx]
+                J.append([c, select_length_idx, profit_matrix[c][select_length_idx]])
             else:
                 continue
-        J_norm = np.array(J, dtype=float).sum(axis=0)[-1]
+        # print("J", J)
+        if len(J)>0:
+            J_norm = np.array(J, dtype=float).sum(axis=0)[-1]
+        else:
+            J_norm = 0
 
         if J_norm <= 0.8 * x:
-            upper_bound = x * (1 + eplison)
+            up_bound = x * (1 + eplison)
+            print("Adjust up_bound")
         else:
             low_bound = x * (1 - eplison)
+            print(low_bound)
+            print("Adjust low bound")
 
-        if upper_bound/low_bound <= 5:
+        
+        ## Current Choice and used time
+        for j in J:
+            pickup_length[j[0]] = j[1]
+
+        time_sum = 0
+        for key, value in enumerate(pickup_length):
+            time_sum += time_matrix[key][value]
+        
+        if up_bound/low_bound <= 5 and time_sum <= delta_i:
             break
         else:
-            x = upper_bound / 2
-       
-    for j_idx, j in enumerate(J):
-        pickup_length[j_idx] = j[0]
-    # print(pickup_length)
-    time_sum = 0
-    profit_sum = 0
-    for key, value in enumerate(pickup_length):
-        time_sum += time_matrix[key][value]
+            x = up_bound / 2
 
+        if x == prev_x:
+            break
+        else:
+            prev_x = x  
+
+    profit_sum = 0
     for key, value in enumerate(pickup_length):
         profit_sum += profit_matrix[key][value]
 
@@ -138,18 +154,18 @@ def drop_measurement_if_exist(table_name):
 
 if __name__=='__main__':
 
-    drop_measurement_if_exist('L_approx_length')
+    drop_measurement_if_exist('L_approx_exp_length')
     drop_measurement_if_exist('L_approx_exp_time_profit')
-
+    trigger_interval = 6
     for d in range(4,16): 
-        for start in range(0,23,6):
+        for start in range(0,23,trigger_interval):
             name = "raw_11_"+str(d)
             result = DBclient.query("SELECT * FROM "+name)
             result_list = list(result.get_points(measurement=name))
             day_list = []
             for r in result_list:
                 day_idx, time_idx = get_context(r['name'])
-                if start<=time_idx and time_idx<start+6:
+                if start<=time_idx and time_idx<start+trigger_interval:
                     day_list.append(r)
 
 

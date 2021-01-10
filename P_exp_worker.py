@@ -7,7 +7,7 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 from optimal_downsampling_manager.resource_predictor.estimate_table import get_context, get_month_and_day
 from influxdb import InfluxDBClient
 DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', "exp_storage")
-algo_list = ['heuristic', 'FIFO', 'EF', 'EFR', 'opt']
+algo_list = ["approx"]
 
 for algo in algo_list:
     ## Hour <--> IA
