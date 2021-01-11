@@ -25,8 +25,8 @@ PCATable = pd.DataFrame(list(result.get_points(measurement="visual_features_entr
 
 alog_list = ['EF','EFR','FIFO','heuristic','opt', 'approx']
 if __name__=='__main__':
-    start_day = 9
-    end_day = 14
+    start_day = 14
+    end_day = 16
     size  = (end_day-start_day+1)
     poisson_peo_rate = np.random.poisson(8,size) # 10 request / 24 hour 
     poisson_ill_rate = np.random.poisson(8,size) # 10 request / 24 hour 

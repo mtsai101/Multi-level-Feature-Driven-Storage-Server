@@ -7,7 +7,7 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 from optimal_downsampling_manager.resource_predictor.estimate_table import get_context, get_month_and_day
 from influxdb import InfluxDBClient
 DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', "exp_storage")
-algo_list = ["approx"]
+algo_list = ["FIFO", "opt", "heuristic", "EF", "EFR", "approx"]
 
 for algo in algo_list:
     ## Hour <--> IA
@@ -58,5 +58,17 @@ for algo in algo_list:
             prev_amount = int(r['total_size'])
             count = (count+1)%24
 
-    ## Hour <--> Downsampling Time
-    ## Direct write
+## Hour <--> Downsampling TimeP_exp_result_heuristic
+for algo in algo_list[1:]:
+    result = DBclient.query("SELECT * FROM P_exp_result_"+algo)
+    result_list = list(result.get_points(measurement = "P_exp_result_"+algo))
+    ti=[]
+    for r in result_list:
+        ti.append(r['time_sum'])
+    ti = np.array(ti)
+    avg = np.mean(ti)
+    err = 1.96*(np.std(ti)/ti.shape[0])
+    with open("experiments/P_"+algo+"_downsampling_time.csv",'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([avg,err])
+   

@@ -139,7 +139,6 @@ def L_opt(pickup_length):
 
     return time_sum, profit_sum, pickup_length_transformed
     
-
 def L_heuristic(pickup_length):
 
     global time_matrix, profit_matrix, pre_a_selected_tuple, clip_number, delta_i
