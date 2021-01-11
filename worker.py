@@ -59,7 +59,7 @@ if __name__=='__main__':
     # degraded_IATable = Degraded_IATable(True)
     # analyTimeTable = AnalyTimeTable(True)
     # downTimeTable = DownTimeTable(True)
-    downRatioTable = DownRatioTable(True)
+    # downRatioTable = DownRatioTable(True)
 
 
     ## build degrade L_ia data for degrade L_ia Table
@@ -150,3 +150,11 @@ if __name__=='__main__':
     # for i in range(4,12):
     #     database = 'analy_complete_sample_quality_result_inshot_11_'+str(i)
     #     drop_measurement_if_exist(database)
+
+
+    try:
+        print(a)
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno, e)
