@@ -23,7 +23,7 @@ import csv
 import ast
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="3"
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
@@ -43,7 +43,7 @@ class Analyst(object):
         self.write2disk = False
         self.writer = None
         self.clip_name = None
-        self.DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient('localhost', data['global']['database_port'], 'root', 'root', data['global']['database_name'])
         self.shot_list = None
         self.shot_list_index = 0
         self.per_frame_target_result = []
@@ -82,8 +82,7 @@ class Analyst(object):
         self.total_frame_num = self.vs.get(cv2.CAP_PROP_FRAME_COUNT)
         self.img_width = int(self.vs.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.img_height = int(self.vs.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        
-        
+        print(self.total_frame_num)
         self.shot_list =  self.get_shot_list(L_decision)
         self.processing_fps = 0.0
         self.writer = None
@@ -91,7 +90,7 @@ class Analyst(object):
     # find the shot start and end position in the sampled quality video
     def get_shot_list(self, L_decision):
         if L_decision.fps==24 and L_decision.bitrate==1000:
-            unsample_video_path = clip['name']
+            unsample_video_path = L_decision.clip_name
             sampling_frame_ratio = 1
         else:
             sample_video_path_parse = L_decision.clip_name.split('/')
@@ -148,7 +147,7 @@ class Analyst(object):
             ## save info_amount by type
             json_body.append(
                 {
-                    "measurement": "analy_result_sample_quality_frame_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
+                    "measurement": "analy_result_raw_per_frame_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
                     "tags": {
                         "a_type": str(L_decision.a_type),
                         "day_of_week":int(L_decision.day_idx),
@@ -165,7 +164,7 @@ class Analyst(object):
                     }
                 }
             )
-        self.DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=80000, protocol='json')
+        self.DBclient.write_points(json_body, database=data['global']['database_name'], time_precision='ms', batch_size=80000, protocol='json')
 
         print("[INFO] Record each frame results in the shot, take %.2f second"%(time.time()-s))
         
@@ -288,6 +287,26 @@ class Analyst(object):
                         cvDrawBoxes("person",bbox,image)
 
                     text = "Number of people: {}".format(len(boxs_))
+
+                    cv2.putText(image, text, (10, darknet.network_height(self.netMain) - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    # check to see if we should write the frame to disk
+                    self.writer.write(image)
+
+            elif type_ == 'car_counting':
+                for obj in detections:
+                    class_ = obj[0].decode("utf-8")
+                    if class_=='car' or class_=='motorbike' or class_=='bus' or class_=='truck':
+                        boxs_.append(list(obj[-1]))
+
+                self.target_counter += len(boxs_)
+                self.per_frame_target_result.append([self.framesCounter,len(boxs_), time.time()-s_p_frame])
+                
+                
+                if self.write2disk:
+                    for bbox in boxs_:
+                        cvDrawBoxes(class_,bbox,image)
+
+                    text = "Number of cars: {}".format(len(boxs_))
 
                     cv2.putText(image, text, (10, darknet.network_height(self.netMain) - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     # check to see if we should write the frame to disk

@@ -43,7 +43,7 @@ if __name__=='__main__':
             
     #         DBclient.write_points(json_body)
 
-    ## init sample video database
+    # init sample video database
 
     # base_dir = "./storage_server_volume/converted_videos/"
     # quality_dir = os.listdir(base_dir)
@@ -62,7 +62,7 @@ if __name__=='__main__':
     #                 continue
     #             date =  v_path.split('/')[-2].split('_')[0].split('-')
                 
-    #             print("sample_11_"+str(int(date[2])), v_path, fps, bitrate)
+    #             # print("sample_11_"+str(int(date[2])), v_path, fps, bitrate)
     #             json_body = [
     #                                 {
     #                                     "measurement": "sample_11_"+str(int(date[2])),

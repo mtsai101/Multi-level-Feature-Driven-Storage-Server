@@ -15,9 +15,10 @@ import sys
 
 trigger_interval = datetime.timedelta(hours=6) # hours
 f_c = 24*60
-pre_a_selected=[5.0, 10.0, 25.0, 50.0, 100.0]
+# pre_a_selected=[5.0, 10.0, 25.0, 50.0, 100.0]
 
-ANALY_LIST = ["people_counting","illegal_parking0"]
+# ANALY_LIST = ["people_counting","illegal_parking0"]
+ANALY_LIST = ["illegal_parking1","car_counting"]
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
@@ -26,7 +27,7 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 class WorkloadGen():
     def __init__(self):
         self.pending_list = list()
-        self.DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient('localhost', data['global']['database_port'], 'root', 'root', data['global']['database_name'])
         # the current time 
         self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 30, hour = 15)   
         #the last updated time
@@ -126,14 +127,14 @@ class WorkloadGen():
                 # result_list += list(result.get_points(measurement="raw_"+ str(i.month) +"_"+str(i.day)))
                 # i += trigger_interval
             ## if we just want to specify some videos    
+            result_list = []
+            for i in range(15,16):
+                table_name = 'sample_11_'+str(i)
+                result = self.DBclient.query("select * from "+table_name)
+                result_list.extend(list(result.get_points(measurement=table_name)))
 
-            
-            table_name = 'sample_11_9'
-            result = self.DBclient.query("select * from "+table_name)
-            result_list = list(result.get_points(measurement=table_name))
 
-
-            for r in result_list[100:]:
+            for r in result_list:
                 v = r['name'].split("/")[-1]
                 info_v = v.split("_")
                 date = info_v[-2].split("-")
@@ -149,7 +150,7 @@ class WorkloadGen():
                             "measurement": "pending_video",
                             "tags": {
                                 "name":r['name'],
-                                "a_type":ANALY_LIST[1],
+                                "a_type":ANALY_LIST[0],
                                 "prev_fps":int(24),
                                 "prev_bitrate":int(1000),
                                 "fps":int(r['fps']),
@@ -169,36 +170,3 @@ class WorkloadGen():
         except Exception as e:
             print(e)
 
-    
-
-    def log_database(self,clip_date,clip_hour):
-        
-        if clip_hour != self.cur_hour:
-            ## check if dir exist
-            if not os.path.isdir("./prob2_"+self.algo_type):
-                os.system("mkdir prob2_"+self.algo_type)
-
-            ## log information, used space, clip num
-            cur_sumsize = sum(f.stat().st_size for f in self.storage_dir.glob('**/*') if f.is_file())
-            result = self.DBclient.query("SELECT * FROM videos_in_server")
-            result_list = list(result.get_points(measurement='videos_in_server'))
-
-            preserved_ia_in_server = 0
-            with open("./prob2_"+self.algo_type+"/clips_"+str(self.cur_day)+"_"+str(self.cur_hour)+".csv", 'w', newline='') as f:
-                writer = csv.writer(f)
-               
-                for r in result_list:
-                    writer.writerow([str(r['name']),str(r['fps']),str(r['bitrate'])])
-                    day_of_week, time_of_day = get_context(r['name'])
-                    for a in range(2):
-                        a_id = pre_a_selected.index(r['a_parameter_'+str(a)])
-                        preserved_ia_in_server += iATable.get_estimation(day_of_week=day_of_week,time_of_day=time_of_day, a_type=a, a_parameter=a_id)*f_c *(float(r['fps'])/24.0)
-            with open("./prob2_"+self.algo_type+"/info_"+str(self.cur_day)+"_"+str(self.cur_hour)+".csv", 'w', newline='') as f:
-                writer = csv.writer(f)
-                # Information amount, Used space, Clip number
-                writer.writerow([preserved_ia_in_server,cur_sumsize,len(result_list)])
-
-            self.cur_day = clip_date
-            self.cur_hour = clip_hour
-        else: 
-            return

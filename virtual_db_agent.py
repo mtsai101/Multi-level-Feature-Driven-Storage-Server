@@ -76,11 +76,8 @@ class DB_agent(object):
     #set port, run monitor    
     def run(self):
         self.ready.wait() #wait every port set up
-<<<<<<< HEAD
-        print("[INFO] DBA is running the task")
-=======
+
         print("[INFO] Agent is running the task")
->>>>>>> 42cc2248a98fa67668ca59a4e89187610d06e7f5
         try:
             self.do()
             input("Press any key to stop...")
@@ -109,13 +106,7 @@ class DB_agent(object):
         try:
             self.lock.acquire()
             print("Generate new pending list...")
-<<<<<<< HEAD
-            ## Get the pending video for downsampling from databases 'stored_month_day'
-            result = self.DBclient.query("SELECT * FROM videos_in_server")
-            self.DDM_pending_videos.extend(list(result.get_points(measurement="videos_in_server")))
-            self.lock.release()
-            # self.conn_send2DDM.send(self.DDM_pending_videos[self.DDMflag:])
-=======
+
             json_body = []
             for i in range(10,16):
                 result = self.DBclient.query("select * from raw_11_"+str(i)) 

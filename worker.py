@@ -55,7 +55,7 @@ if __name__=='__main__':
     # DBclient.write(json.dumps(result_list), params={"database":'test', "measurement":'video_in_server'}, protocol='json')
     # print(json.dumps(result_list))
 
-    full_IATable = Full_IATable(True)
+    # full_IATable = Full_IATable(True)
     # degraded_IATable = Degraded_IATable(True)
     # analyTimeTable = AnalyTimeTable(True)
     # downTimeTable = DownTimeTable(True)

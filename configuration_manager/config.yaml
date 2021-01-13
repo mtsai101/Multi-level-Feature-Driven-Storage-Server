@@ -58,9 +58,9 @@ global:
   # SLE2AP: 7010
   # SLE2camera: 6010
   
-  # camera2SLE: 5012
-  # SLE2AP: 7012
-  # SLE2camera: 6012
+  camera2SLE: 5012
+  SLE2AP: 7012
+  SLE2camera: 6012
     
   # camera2SLE: 5014
   # SLE2AP: 7014
@@ -74,9 +74,9 @@ global:
   # SLE2AP: 7018
   # SLE2camera: 6018
 
-  camera2SLE: 5020
-  SLE2AP: 7020
-  SLE2camera: 6020
+  # camera2SLE: 5020
+  # SLE2AP: 7020
+  # SLE2camera: 6020
 
   # camera2SLE: 5016
   # SLE2AP: 7014

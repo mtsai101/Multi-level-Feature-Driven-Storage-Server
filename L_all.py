@@ -264,9 +264,11 @@ if __name__=='__main__':
 
     parser.add_argument('-d','--delta', required=True, help='Simple Analytics Deadline (sec)')
     parser.add_argument('-a','--algo', required=True, help='Downsampling Strategy (opt, heuritstic, approx)')
+    parser.add_argument('-lf','--lowfeature', required=True, help='Consider low level feature or not')
+
     args = parser.parse_args()
 
-    delta_i = int(args.delta); algo = str(args.algo)
+    delta_i = int(args.delta); algo = str(args.algo); use_low_feature = int(args.lowfeature)
     drop_measurement_if_exist('L_'+algo+'_exp_length')
     drop_measurement_if_exist('L_'+algo+'_exp_time_profit')
 
@@ -340,7 +342,8 @@ if __name__=='__main__':
                         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                         print(exc_type, fname, exc_tb.tb_lineno, e)
                         sys.exit()
-                profit_matrix[i] += pca_value
+                if use_low_feature:
+                    profit_matrix[i] += pca_value
 
             time_matrix = np.ceil(time_matrix).astype(int)
 
