@@ -23,7 +23,7 @@ import csv
 import ast
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"]="3"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
@@ -201,7 +201,10 @@ class Analyst(object):
 
             if self.shot_list[self.shot_list_index][1] < self.framesCounter:
                 self.shot_list_index += 1
-
+            
+            if self.shot_list_index >= len(self.shot_list):
+                break
+            
             if not self.shot_list[self.shot_list_index][0]:
                 self.framesCounter+=1
                 continue

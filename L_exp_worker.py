@@ -163,9 +163,10 @@ for algo in algo_list:
                 weekend_ti[3].append(r['execution_time'])
 
     weekday_ti = np.array(weekday_ti); weekend_ti = np.array(weekend_ti)
-    print("weekday_ti",weekday_ti); print("weekend_ti",weekend_ti)
+    weekday_ti = np.log10(weekday_ti); weekend_ti = np.log10(weekend_ti)
     weekday_err = np.zeros(4); weekday_avg = np.mean(weekday_ti, axis=1)
     weekend_err = np.zeros(4); weekend_avg = np.mean(weekend_ti, axis=1)
+    print("weekday_ti",weekday_ti); print("weekend_ti",weekend_ti)
 
     for i in range(4):
         weekday_err[i] = 1.96*(np.std(weekday_ti[i])/weekday_ti.shape[1])

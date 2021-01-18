@@ -272,7 +272,7 @@ def P_heuristic_log(pickup_quality, space_sum, log, day_list):
         time_sum += time_matrix_sorted[t_key][v]
     time_sum /= scale_ratio
 
-    print("Before downsampled...", time_sum)
+    print("Before downsampled...", time_sum) # should be zero
 
 
     while space_sum > O_v or time_sum > delta_d:
@@ -559,7 +559,7 @@ def main(args):
     total_video_ia = 0
     video_list = []
     video_in_server = [] 
-    start = 9
+    start = 4
     end = 16
     sample_length_full_quality_info_df = None
     full_length_sample_quality_info_df = None
@@ -753,16 +753,19 @@ def main(args):
                 except:
                     print("Not found sampled_video: name:", day_list[i]['name'], "fps:", result_fps, "bitrate:", result_bitrate)
                     preserved_video_info_peo = 0
+                
                 try:
-                    preserved_video_info_pca = PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value']
+                    preserved_video_info_pca = PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value'] if use_low_feature else 0
                 except:
                     preserved_video_info_pca = 0
+
                 preserved_video_info = preserved_video_info_ill+ preserved_video_info_peo + preserved_video_info_pca
                 
 
                 origin_video_info = (full_info_df.loc[(full_info_df['name']==day_list[i]['name']) & (full_info_df['a_type']=='illegal_parking0')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='illegal_parking0')]['value'].iloc[0]) 
                 origin_video_info += (full_info_df.loc[(full_info_df['name']==day_list[i]['name']) & (full_info_df['a_type']=='people_counting')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='people_counting')]['value'].iloc[0]) 
-                origin_video_info += PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value']
+                if use_low_feature:
+                    origin_video_info += PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value']
                 
                 if preserved_video_info > origin_video_info:
                     print("origin_video_info", origin_video_info, "preserved_video_info", preserved_video_info)
