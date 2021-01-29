@@ -1,7 +1,7 @@
 from influxdb import InfluxDBClient
 import pandas as pd
-from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable, DownTimeTable, DownRatioTable
-DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
+from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable, DownTimeTable, DownRatioTable, Degraded_Q_IATable
+# DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 import csv
 import cv2
 import ast 
@@ -60,6 +60,10 @@ if __name__=='__main__':
     # analyTimeTable = AnalyTimeTable(True)
     # downTimeTable = DownTimeTable(True)
     # downRatioTable = DownRatioTable(True)
+<<<<<<< HEAD
+=======
+    degraded_Q_IATable = Degraded_Q_IATable(True)
+>>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
 
 
     ## build degrade L_ia data for degrade L_ia Table
@@ -152,9 +156,122 @@ if __name__=='__main__':
     #     drop_measurement_if_exist(database)
 
 
+<<<<<<< HEAD
     try:
         print(a)
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno, e)
+=======
+    ## Move measurement from storage to merge_storage
+    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
+    # result = DBclient.query("SELECT * FROM analy_complete_sample_quality_result_inshot_11_6")
+    # result_list = list(result.get_points(measurement = "analy_complete_sample_quality_result_inshot_11_6"))
+    # json_body = []
+    # with open("rsample_9_all.csv", 'r') as csvfile:
+    #     rows = csv.reader(csvfile)
+    #     for k,i in enumerate(rows):
+    #         if k==0:
+    #             continue
+
+    #         json_body.append(
+    #                     {
+    #                         "measurement": "analy_complete_sample_quality_result_inshot_11_9",
+    #                         "tags": {
+    #                             "a_type": str(i[0]),
+    #                             "day_of_week":int(i[1]),
+    #                             "time_of_day":int(i[2]),
+    #                             "a_parameter": int(i[3]), 
+    #                             "fps": int(i[4]),
+    #                             "bitrate": int(i[5])
+    #                         },
+    #                         "fields": {
+    #                             "total_frame_number":int(i[6]),
+    #                             "name": str(i[7]),
+    #                             "time_consumption": float(i[8]),
+    #                             "target": int(i[9])
+    #                         }
+    #                     }
+    #         )
+
+    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')        
+    # DBclient.write_points(json_body, database='merge_storage', time_precision='ms', batch_size=40000, protocol='json')
+
+
+
+    ## rename PCA
+    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')
+    # result = DBclient.query("SELECT * FROM visual_features_entropy_PCA_normalized")
+    # result_list = list(result.get_points(measurement = "visual_features_entropy_PCA_normalized"))
+    # data_points = []
+
+    # for r in result_list:
+    #     data_points.append({
+    #         "measurement": "visual_features_entropies_PCA_normalized",
+    #         "tags": {
+    #             "name": str(r['name'][1:])
+    #         },
+    #         "fields": {
+    #             "value": float(r['value'])
+    #         }
+    #     })
+    
+    # DBclient.write_points(data_points, database='merge_storage', time_precision='ms', batch_size=300, protocol='json')  
+    # name="./storage_server_volume/SmartPole/Pole1/2020-11-15_00-00-00/Pole1_2020-11-15_20-00-00.mp4"
+    # pca_value =  list(DBclient.query("SELECT * FROM visual_features_entropies_PCA_normalized where \"name\"=\'"+name+"\'"))[0][0]['value']
+    # print(pca_value)
+
+
+    ### Update data_points testing
+    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')
+    # name= "water"
+    # r = list(DBclient.query("SELECT * FROM meters where \"meter\"=\'"+name+"\'"))[0][0]
+    # print(r)
+
+    # json_body = [
+    #             {
+    #                 "measurement":"meters",
+    #                 "tags": {
+    #                     "meter": name,
+    #                     "place":"6F-1"
+    #                 },
+    #                 "time":r['time'],
+    #                 "fields": {
+    #                     "consumption":8.9,
+    #                     "volume":112.456
+    #                 }
+    #             }
+    #         ]
+    # DBclient.write_points(json_body, time_precision='ms')
+
+
+
+    ### Convert video path from ../converted/... to original
+    # DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'merge_storage')
+    # for d in range(5, 16):
+    #     result = list(DBclient.query("SELECT * FROM analy_complete_sample_quality_result_inshot_11_"+str(d)))[0]
+    #     for r in result:
+    #         new_path = os.path.join("./storage_server_volume/SmartPole/Pole1", "/".join(r['name'].split("/")[-2:]))
+    #         json_body = [
+    #                 {
+    #                     "measurement": "sample_quality_alltarget_inshot_11_"+str(d),
+    #                     "tags": {
+    #                         "a_type": str(r['a_type']),
+    #                         "day_of_week":int(r['day_of_week']),
+    #                         "time_of_day":int(r['time_of_day']),
+    #                         "a_parameter": int(r['a_parameter']), 
+    #                         "fps": int(r['fps']),
+    #                         "bitrate": int(r['bitrate'])
+    #                     },
+    #                     "fields": {
+    #                         "total_frame_number":int(r['total_frame_number']),
+    #                         "name": str(new_path),
+    #                         "time_consumption": float(r['time_consumption']),
+    #                         "target": int(r['target'])
+    #                     }
+    #                 }
+    #             ]
+    #         DBclient.write_points(json_body)
+            
+>>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194

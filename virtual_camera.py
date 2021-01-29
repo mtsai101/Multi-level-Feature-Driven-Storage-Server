@@ -11,8 +11,7 @@ import os
 import csv
 import copy
 import yaml
-
-
+import sys
 
 trigger_interval = datetime.timedelta(hours=6) # hours
 f_c = 24*60
@@ -129,12 +128,20 @@ class WorkloadGen():
             ## if we just want to specify some videos    
 
             
+<<<<<<< HEAD
             table_name = 'sample_11_12'
+=======
+            table_name = 'sample_11_9'
+>>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
             result = self.DBclient.query("select * from "+table_name)
             result_list = list(result.get_points(measurement=table_name))
 
 
+<<<<<<< HEAD
             for r in result_list[66:]:
+=======
+            for r in result_list[100:]:
+>>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
                 v = r['name'].split("/")[-1]
                 info_v = v.split("_")
                 date = info_v[-2].split("-")
@@ -163,7 +170,7 @@ class WorkloadGen():
                         }
                     ]
                     self.DBclient.write_points(json_body)
-
+            
             self.lock.release()
             self.conn_send2SLE.send(True)
             print("Send signal to SLE")

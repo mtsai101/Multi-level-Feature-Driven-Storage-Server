@@ -1,5 +1,5 @@
 from influxdb import InfluxDBClient
-# from optimal_downsampling_manager.resource_predictor.table_estimator import AnalyTimeTable, DownTimeTable, DownRatioTable, IATable
+from optimal_downsampling_manager.resource_predictor.table_estimator import AnalyTimeTable, DownTimeTable, DownRatioTable, IATable, drop_measurement_if_exist
 import os
 import csv
 import ast
@@ -8,13 +8,19 @@ import yaml
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
-DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
+DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', data['global']['database_name'])
 
 if __name__=='__main__':
     
     # init raw video database
     # for i in range(10,16):
-    #     base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+str(i)+"_00-00-00"
+    #     db_name = "raw_11_"+str(i)
+    #     if i<10:
+    #         i_ = "0"+str(i)
+    #     else:
+    #         i_=str(i)
+
+    #     base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+i_+"_00-00-00"
     #     video_li = os.listdir(base_dir)
     #     video_li = sorted(video_li, key= lambda x: x)
     #     for v in video_li:
@@ -24,7 +30,7 @@ if __name__=='__main__':
     #             continue
     #         json_body = [
     #                             {
-    #                                 "measurement": "raw_11_"+str(i),
+    #                                 "measurement": db_name,
     #                                 "tags": {
     #                                     "name": str(v_path)
                                         

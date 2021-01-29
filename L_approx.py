@@ -32,10 +32,7 @@ for a in pre_a_selected:
         pre_a_selected_tuple.append([a,b]) 
 
 pre_a_selected_tuple = np.array(pre_a_selected_tuple)
-# print(pre_a_selected_tuple)
-# analyTimeTable = AnalyTimeTable(False)
-# iATable = IATable(False)
-# debug = False
+
 
 # time_matrix = np.array([
 #     [24,10,3,12,2,0],
@@ -78,31 +75,41 @@ pickup_length = None
 clip_number = None
 
 
-def L_heuristic(pickup_length):
+def L_approx(pickup_length):
 
     global time_matrix, profit_matrix, pre_a_selected_tuple, clip_number, delta_i
-    argsort_time_matrix = np.argsort((-time_matrix))
-    for i in range(clip_number):
-        profit_matrix_sorted[i] = profit_matrix[i][argsort_time_matrix[i]]
-        time_matrix_sorted[i] = time_matrix[i][argsort_time_matrix[i]]
-
-
-    while get_time_sum(pickup_length, time_matrix_sorted) > delta_i:
-        pending_profit_list = list() 
-        for c_key, l in enumerate(pickup_length):
-            if time_matrix_sorted[c_key][l] > 0:
-                pending_profit_list.append((c_key, profit_matrix_sorted[c_key][l]/time_matrix_sorted[c_key][l]))
-
-        if len(pending_profit_list)>0: # if there is other length
-            victim = min(pending_profit_list, key=lambda x:x[1])
-
-        pickup_length[victim[0]] += 1 
-
-
-    for k_i, i in enumerate(pickup_length):
-        pickup_length[k_i] = argsort_time_matrix[k_i][i]
-
+    time_matrix = time_matrix.astype(float); profit_matrix = profit_matrix.astype(float)
+    eplison = 0.6; low_bound = profit_matrix.max(); upper_bound = clip_number * low_bound
+    x = upper_bound/2
     
+    threshold = (0.8 * x / delta_i)
+    time_matrix += 0.0000001
+    ratio_matrix = profit_matrix/time_matrix
+
+    while True:
+        J = list()
+        for c in range(clip_number):
+            cancadiated = np.where(ratio_matrix[c]>threshold)
+            if cancadiated[0].shape[0]>0:
+                cancadiated_idx = np.argmax(cancadiated[0])
+                J.append([cancadiated_idx, profit_matrix[c][cancadiated_idx]])
+            else:
+                continue
+        J_norm = np.array(J, dtype=float).sum(axis=0)[-1]
+
+        if J_norm <= 0.8 * x:
+            upper_bound = x * (1 + eplison)
+        else:
+            low_bound = x * (1 - eplison)
+
+        if upper_bound/low_bound <= 5:
+            break
+        else:
+            x = upper_bound / 2
+       
+    for j_idx, j in enumerate(J):
+        pickup_length[j_idx] = j[0]
+    # print(pickup_length)
     time_sum = 0
     profit_sum = 0
     for key, value in enumerate(pickup_length):
@@ -130,10 +137,9 @@ def drop_measurement_if_exist(table_name):
 
 
 if __name__=='__main__':
-    
 
-    drop_measurement_if_exist('L_heuristic_length')
-    drop_measurement_if_exist('L_heuristic_exp_time_profit')
+    drop_measurement_if_exist('L_approx_length')
+    drop_measurement_if_exist('L_approx_exp_time_profit')
 
     for d in range(4,16): 
         for start in range(0,23,6):
@@ -192,14 +198,15 @@ if __name__=='__main__':
                 
 
             s = time.time()
-            time_sum, profit_sum, pickup_length_transformed = L_heuristic(pickup_length)
+            time_sum, profit_sum, pickup_length_transformed = L_approx(pickup_length)
+            
             exec_time = time.time() - s
 
             ## write to database
             for idx, day in enumerate(day_list):
                 json_body = [
                                 {
-                                    "measurement":"L_heuristic_exp_length",
+                                    "measurement":"L_approx_exp_length",
                                     "tags": {
                                         "name":str(day['name'])
                                     },
@@ -213,7 +220,7 @@ if __name__=='__main__':
 
             json_body = [
                             {
-                                "measurement":"L_heuristic_exp_time_profit",
+                                "measurement":"L_approx_exp_time_profit",
                                 "tags": {
                                     "day":str(d),
                                     "start":str(start),

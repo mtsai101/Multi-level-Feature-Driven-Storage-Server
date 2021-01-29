@@ -7,7 +7,7 @@ import yaml
 import sys
 
 ANALY_LIST=['illegal_parking0','people_counting']
-DOWN_LIST=['temporal','bitrate','qp']
+
 
 pre_a_selected=[24,48,96,144]
 
@@ -18,7 +18,7 @@ pre_d_selected = [(24,1000),(24,500),(12,500),(12,100),(6,100),(6,10),(1,10)]
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
-DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
+DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', data['global']['database_name'])
 
 
 class Table:
@@ -32,27 +32,7 @@ class Table:
         self.down_result_table = None
         self.start_day = 4
         self.end_day = 9
-        
 
-    # def get_latest_value(self, day_idx, time_idx, a_type='None', a_parameter=-1, fps=24, bitrate=1000):
-    #     # day_idx, time_idx = get_context(clip_name)
-    #     """
-    #     step1 : check the very time is in weekday or weekend
-    #     step2 : check nearest, switch to another weektime every time slot.
-    #     """
-    #     for r in range(0,11): # 
-    #         for w in range(2):# check the corresponding time in weekend
-    #             for i in range(2*r,2*r+2): # check neighbor which time difference is +1 or -1 
-    #                 step = int(i/2) * pow((-1),i)
-    #                 new_time_idx = (time_idx + step + self.window_size) % self.window_size
-                    
-    #                 target_col, estimation_point = self.make_query(day_idx,new_time_idx, a_type, a_parameter, fps, bitrate)
-    #                 if estimation_point.shape[0]==self.window_size:
-    #                     estimation = estimation_point.loc[:,target_col].mean()
-    #                     return estimation
-                    
-    #             day_idx = (day_idx+1) % 2
-    #     return 0.0
 
     def get_latest_value(self, day_idx, time_idx, a_type='None', a_parameter=-1, fps=24, bitrate=1000):
         return_value = self.make_query(day_idx, time_idx, a_type, a_parameter, fps, bitrate)
@@ -80,25 +60,28 @@ class Table:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size
                 else:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
-                return result_value / self.max_info[a_type]
+                return result_value/self.max_info[a_type]
             else:
                 return 0
 
-        elif self.model_type == 'degraded_IATable':
+        elif self.model_type == 'Degraded_IATable':
             sample_result_list=[]; full_result_list=[]
             for d in range(self.start_day,self.end_day):
                 full_table_name = 'analy_complete_result_inshot_11_'+str(d)
                 sample_table_name = 'analy_sample_result_inshot_11_'+str(d)
                 try:
                     sample_result = DBclient.query('SELECT \"name\", target FROM '+ sample_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\' AND \"a_parameter\"=\''+str(a_parameter)+'\'')
-                    sample_result_list.extend(list(sample_result.get_points(measurement = sample_table_name)))
                     full_result = DBclient.query('SELECT \"name\", target FROM '+ full_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\'')
-                    full_result_list.extend(list(full_result.get_points(measurement = full_table_name)))
                     if len(sample_result) != len(full_result):
-                        print("not found enough sample_result_list on", sample_table_name, "")
+                        print("not found enough sample_result_list on", sample_table_name, "a_type:", a_type)
+                        continue
+                    sample_result_list.extend(list(sample_result.get_points(measurement = sample_table_name)))
+                    full_result_list.extend(list(full_result.get_points(measurement = full_table_name)))
+
                 except:
                     continue
 
+            print("length:",(len(sample_result_list)==len(full_result_list)))
             if len(sample_result_list)>0 and len(full_result_list)>0:
                 result_value=0
                 full_sorted_list = sorted(full_result_list, key=lambda k :k['name'], reverse=True)
@@ -107,6 +90,8 @@ class Table:
                 length = min(len(full_sorted_list), self.window_size)
                 for i in range(length):
                     if full_sorted_list[i]['target'] and sample_sorted_list[i]['target']:
+                        if sample_sorted_list[i]['target'] > full_sorted_list[i]['target']:
+                            print("larger than:", sample_sorted_list[i], full_sorted_list[i])
                         result_value += sample_sorted_list[i]['target']/full_sorted_list[i]['target']
                 return result_value/length
             else:
@@ -171,12 +156,44 @@ class Table:
                 if len(sorted_list) > self.window_size:
                     result_value = sum(item['ratio'] for item in sorted_list[:self.window_size+1])/self.window_size
                     # print("total frame:",sum(item['total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size)
-
                 else:
                     result_value = sum(item['ratio'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
                     # print(sum(item['total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list))
 
                 return result_value
+            else:
+                return 0
+
+        elif self.model_type == 'Degraded_Q_IATable':
+            sample_result_list=[]; full_result_list=[]
+            for d in range(self.start_day,self.end_day):
+                full_table_name = 'analy_complete_result_inshot_11_'+str(d)
+                sample_table_name = 'analy_complete_sample_quality_result_inshot_11_'+str(d)
+                try:
+                    sample_result = DBclient.query('SELECT \"name\", target FROM '+ sample_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\' AND \"fps\"=\''+str(fps)+'\' AND \"bitrate\"=\''+str(bitrate)+'\'')
+                    full_result = DBclient.query('SELECT \"name\", target FROM '+ full_table_name +' WHERE \"a_type\"=\''+ a_type +'\' AND \"day_of_week\"=\'' + str(day_idx) + '\' AND \"time_of_day\"=\'' + str(time_idx)+'\'')
+                    if len(sample_result) != len(full_result):
+                        print("not found enough sample_result_list on", sample_table_name, " a_type:", a_type)
+                        continue
+                    sample_result_list.extend(list(sample_result.get_points(measurement = sample_table_name)))
+                    full_result_list.extend(list(full_result.get_points(measurement = full_table_name)))                    
+                except:
+                    continue
+            print("length:",(len(sample_result_list)==len(full_result_list)))
+            if len(sample_result_list)>0 and len(full_result_list)>0:
+                result_value=0
+                full_sorted_list = sorted(full_result_list, key=lambda k :k['name'], reverse=True)
+                sample_sorted_list = sorted(sample_result_list, key=lambda k :k['name'], reverse=True)
+                
+                length = min(len(full_sorted_list), self.window_size)
+                for i in range(length):
+                    if full_sorted_list[i]['target'] and sample_sorted_list[i]['target']:
+                        if sample_sorted_list[i]['target'] > full_sorted_list[i]['target']:
+                            print("larger than:", sample_sorted_list[i], full_sorted_list[i])
+
+                        result_value += sample_sorted_list[i]['target']/full_sorted_list[i]['target']
+                        
+                return result_value/length
             else:
                 return 0
         else:
@@ -239,8 +256,8 @@ class DownTimeTable(Table):
                                     "measurement":self.model_type + 'Table',
                                     "tags": {
                                         "name": self.model_type,
-                                        "fps":float(d_parameter[0]),
-                                        "bitrate":float(d_parameter[1]),
+                                        "fps":int(d_parameter[0]),
+                                        "bitrate":int(d_parameter[1]),
                                         "day_of_week":int(day_idx),
                                         "time_of_day":int(time_idx),
                                     },
@@ -249,7 +266,7 @@ class DownTimeTable(Table):
                                     }
                                 }
                         )      
-            DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+            DBclient.write_points(json_body, database=data['global']['database_name'], time_precision='ms', batch_size=40000, protocol='json')
 
             # DBclient.write_points(json_body)
             print("[INFO] Updating completed!")
@@ -276,8 +293,8 @@ class DownRatioTable(Table):
                                     "measurement":self.model_type + 'Table',
                                     "tags": {
                                         "name": self.model_type,
-                                        "fps":float(d_parameter[0]),
-                                        "bitrate":float(d_parameter[1]),
+                                        "fps":int(d_parameter[0]),
+                                        "bitrate":int(d_parameter[1]),
                                         "day_of_week":int(day_idx),
                                         "time_of_day":int(time_idx),
                                     },
@@ -286,35 +303,39 @@ class DownRatioTable(Table):
                                     }
                                 }
                         )      
-            print(len(json_body))
-            DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+
+            DBclient.write_points(json_body, database=data['global']['database_name'], time_precision='ms', batch_size=40000, protocol='json')
 
             print("[INFO] Updating completed!")
     
-class Degraded_IATable(Table):
+class Degraded_Q_IATable(Table):
     def __init__(self,refresh):
         super().__init__('')
 
-        self.model_type='degraded_IATable'
+        self.model_type='Degraded_Q_IATable'
         self.refresh = refresh
         if self.refresh:
             ## influxdb can not update, only we can do is deleting the previous one
-            print("[INFO] Updating the Degraded_IATable models...")
-            drop_measurement_if_exist("Degraded_IATable")
+            print("[INFO] Updating the Degraded_Q_IATable models...")
+            drop_measurement_if_exist("Degraded_Q_IATable")
             json_body = []
             for day_idx in range(2):
                 for time_idx in range(24):
                     for a_type in ANALY_LIST:
-                        for a_parameter in pre_a_selected:
-                            value = self.get_latest_value(day_idx, time_idx, fps=d_parameter[0], bitrate=d_parameter[1])
-                            json_body = [
+                        for d_param_key, d_parameter in enumerate(pre_d_selected):
+                            if d_param_key==0:
+                                value = 1
+                            else:
+                                value = self.get_latest_value(day_idx, time_idx, a_type, fps=d_parameter[0], bitrate=d_parameter[1])
+
+                            json_body.append(
                                     {
                                         "measurement":self.model_type,
                                         "tags": {
                                             "name": self.model_type,
                                             "a_type":a_type,
-                                            "fps":float(d_parameter[0]),
-                                            "bitrate":float(d_parameter[1]),
+                                            "fps":int(d_parameter[0]),
+                                            "bitrate":int(d_parameter[1]),
                                             "day_of_week":int(day_idx),
                                             "time_of_day":int(time_idx),
                                         },
@@ -322,8 +343,8 @@ class Degraded_IATable(Table):
                                             "value":float(value)
                                         }
                                     }
-                                ]
-            DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
+                            )
+            DBclient.write_points(json_body, database=data['global']['database_name'], time_precision='ms', batch_size=40000, protocol='json')
             print("[INFO] Updating completed!")
         
 
@@ -332,7 +353,7 @@ class Degraded_IATable(Table):
     def __init__(self,refresh):
         super().__init__('')
 
-        self.model_type='degraded_IATable'
+        self.model_type='Degraded_IATable'
         self.refresh = refresh
         if self.refresh:
             ## influxdb can not update, only we can do is deleting the previous one
@@ -369,6 +390,7 @@ class Full_IATable(Table):
 
         self.model_type='Full_IATable'
         self.max_info={"illegal_parking0":0, "people_counting":0}
+        self.max_target={"illegal_parking0":0, "people_counting":0}
         self.refresh = refresh
          
         # store max_value
@@ -377,11 +399,27 @@ class Full_IATable(Table):
                 building_table_name = 'analy_complete_result_inshot_11_'+str(d)
                 for a_type in ANALY_LIST:
 
-                    max_result = DBclient.query('SELECT target/total_frame_number AS info FROM ' + building_table_name + ' WHERE \"a_type\"=\''+a_type+'\'')
+                    max_result = DBclient.query('SELECT target,target/total_frame_number FROM ' + building_table_name + ' WHERE \"a_type\"=\''+a_type+'\'')
                     max_result = list(max_result.get_points(measurement = building_table_name))
-                    max_value = sorted(max_result, key=lambda k :k['info'],reverse=True)[0]['info']
+                    max_info_value = sorted(max_result, key=lambda k :k['target_total_frame_number'],reverse=True)[0]['target_total_frame_number']
+                    max_target_value = sorted(max_result, key=lambda k :k['target'],reverse=True)[0]["target"]
+                    self.max_info[a_type] = max(self.max_info[a_type], max_info_value)
+                    self.max_target[a_type] = max(self.max_target[a_type], max_target_value)
 
-                    self.max_info[a_type] = max(self.max_info[a_type], max_value)
+            drop_measurement_if_exist("MaxAnalyticTargetNumber")
+            for a_type in ANALY_LIST:
+                json_body = [
+                                {
+                                    "measurement":"MaxAnalyticTargetNumber",
+                                    "tags": {
+                                        "a_type":str(a_type)
+                                    },
+                                    "fields": {
+                                        "value":int(self.max_target[a_type]) 
+                                    }
+                                }
+                            ]
+                DBclient.write_points(json_body)      
 
             ## influxdb can not update, only we can do is deleting the previous one
             print("[INFO] Updating the Full_IATable models...")
@@ -436,6 +474,13 @@ def get_context(clip_name):
     day_idx = int(day_idx.weekday() >= 5) # day_idx==0 if weekday else day_idx==1
     time_idx = int(int(video_name_list[-1].split('-')[0]))
     return day_idx, time_idx
+
+    
+def get_month_and_day(clip_name):
+    date =  clip_name.split('/')[-2].split('_')[0].split('-')
+    return int(date[1]), int(date[2])
+
+
 
 def drop_measurement_if_exist(table_name):
     result = DBclient.query('SELECT * FROM '+table_name)
