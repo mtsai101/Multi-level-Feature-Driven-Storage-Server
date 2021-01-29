@@ -1,5 +1,5 @@
 # Multi-level Feature Driven Storage Management of Surveillance Videos
-This project aims to preserve the information amount of surveillance videos as much as possible under the limited storage space. We define the information amount, design two greedy algorithms, build a system. Our GE/GD algorithms decide the sampling lengths and downsampling decision intelligently.
+This project aims to preserve the information amount of surveillance videos as much as possible under the limited storage space. We define the information amount, design two greedy algorithms, build a system. Our EE/ED algorithms decide the sampling lengths and downsampling decision intelligently.
 
 You can quickly know our project by the [video link](https://youtu.be/m6V_BqjsRJU).
 
