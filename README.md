@@ -1,4 +1,4 @@
-# Analytic-Aware Storage Server
+# Multi-level Feature Driven Storage Management of Surveillance Videos
 This project aims to preserve the information amount of surveillance videos as much as possible under the limited storage space. We define the information amount, design two greedy algorithms, build a system. Our GE/GD algorithms decide the sampling lengths and downsampling decision intelligently.
 
 You can quickly know our project by the [video link](https://youtu.be/m6V_BqjsRJU).
@@ -15,8 +15,8 @@ You can quickly know our project by the [video link](https://youtu.be/m6V_BqjsRJ
   - Ubuntu 18.04
   - CUDA 10.0
   - cuDnn 7.6.1
-  - NVIDIA RTX 2060
-- **InfluxDB=1.1.1**: We use [InfluxDB](https://www.influxdata.com/) as our time-series database in the system.
+  - NVIDIA GTX 1080 Ti
+- **InfluxDB=1.8.3**: We use [InfluxDB](https://www.influxdata.com/) as our time-series database in the system.
 - **FFmpeg>=3.4.6**: In our downsampling platform, we apply ffmpeg command to control the bitrate and framerate of our testing videos. Note that we use hevc_cuvid as encoder and decoder so that we can utilize GPU to accelearte the downsampling. 
 - **OpenCV>=3.4**
 - **Virtualenv**: Please use virtual env to ensure the environment is clean. 
