@@ -26,9 +26,9 @@ global:
   # DDM2DP: 7001
   # DP2agent: 6001
 
-  # camera2SLE: 5002
-  # SLE2AP: 7002
-  # SLE2camera: 6002
+  camera2SLE: 5002
+  SLE2AP: 7002
+  SLE2camera: 6002
 
   # agent2DDM: 5003
   # DDM2DP: 7003
@@ -74,9 +74,9 @@ global:
   # SLE2AP: 7018
   # SLE2camera: 6018
 
-  camera2SLE: 5020
-  SLE2AP: 7020
-  SLE2camera: 6020
+  # camera2SLE: 5020
+  # SLE2AP: 7020
+  # SLE2camera: 6020
 
   # camera2SLE: 5016
   # SLE2AP: 7014

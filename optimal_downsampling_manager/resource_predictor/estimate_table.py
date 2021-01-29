@@ -60,7 +60,7 @@ class Table:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:self.window_size+1])/self.window_size
                 else:
                     result_value = sum(item['target_total_frame_number'] for item in sorted_list[:len(sorted_list)+1])/len(sorted_list)
-                return result_value/self.max_info[a_type]
+                return result_value/self.max_target[a_type]
             else:
                 return 0
 

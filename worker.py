@@ -61,9 +61,13 @@ if __name__=='__main__':
     # downTimeTable = DownTimeTable(True)
     # downRatioTable = DownRatioTable(True)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     degraded_Q_IATable = Degraded_Q_IATable(True)
 >>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
+=======
+    # degraded_Q_IATable = Degraded_Q_IATable(True)
+>>>>>>> d90c714b19d5bf9facea3454965b109d5a73aac7
 
 
     ## build degrade L_ia data for degrade L_ia Table
@@ -247,9 +251,9 @@ if __name__=='__main__':
 
 
 
-    ### Convert video path from ../converted/... to original
+    ## Convert video path from ../converted/... to original
     # DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'merge_storage')
-    # for d in range(5, 16):
+    # for d in range(4, 16):
     #     result = list(DBclient.query("SELECT * FROM analy_complete_sample_quality_result_inshot_11_"+str(d)))[0]
     #     for r in result:
     #         new_path = os.path.join("./storage_server_volume/SmartPole/Pole1", "/".join(r['name'].split("/")[-2:]))
@@ -273,5 +277,36 @@ if __name__=='__main__':
     #                 }
     #             ]
     #         DBclient.write_points(json_body)
+<<<<<<< HEAD
             
 >>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
+=======
+
+
+    ### Remove the duplicate data point
+    DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'merge_storage')
+    table_name = "baba"
+    result = list(DBclient.query("SELECT * FROM "+table_name))[0]
+    json_body = []
+    for r in result:
+        json_body.append(
+                        {
+                            "measurement": "analy_complete_sample_quality_result_inshot_11_11",
+                            "tags": {
+                                "a_type": r['a_type'],
+                                "day_of_week": r['day_of_week'],
+                                "time_of_day": r['time_of_day'],
+                                "a_parameter": r['a_parameter'], 
+                                "fps": r['fps'],
+                                "bitrate": r['bitrate']
+                            },
+                            "fields": {
+                                "total_frame_number": r['total_frame_number'],
+                                "name": r['name'],
+                                "time_consumption": r['time_consumption'],
+                                "target": r['target']
+                            }
+                        }
+                    )
+    DBclient.write_points(json_body, database='merge_storage', time_precision='ms', batch_size=1000, protocol='json')
+>>>>>>> d90c714b19d5bf9facea3454965b109d5a73aac7

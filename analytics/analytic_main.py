@@ -166,7 +166,7 @@ class Analytic_Platform():
                                 L_decision.a_param,
                             )
                 self.analyst.analyze_save(L_decision)
-                self.analyst.analyze_save_per_frame(L_decision)
+                # self.analyst.analyze_save_per_frame(L_decision)
                 self.analyst.clean()     
                                 
         except Exception as e:

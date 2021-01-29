@@ -113,8 +113,11 @@ def get_profit_sum(pickup_quality, profit_matrix):
 
 def P_EF(pickup_quality, space_sum):
     flag = 0
-    global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number
-    # space_sum = get_space_sum(pickup_quality, space_matrix)
+    global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number, scale_ratio
+    space_matrix = space_matrix * scale_ratio
+    time_matrix = time_matrix * scale_ratio
+    space_sum *= scale_ratio
+
     while space_sum > O_v:
         if np.all(np.array(pickup_quality)==len(pre_d_selected)-1):
             break
@@ -138,7 +141,8 @@ def P_EF(pickup_quality, space_sum):
     print("EF Results :")
 
     time_sum = get_time_sum(pickup_quality, time_matrix) 
-
+    time_sum /= scale_ratio
+    space_sum /= scale_ratio
     print("pickup_quality",pickup_quality)
     print("time_sum", time_sum)
 
@@ -150,8 +154,11 @@ def P_EF(pickup_quality, space_sum):
 
 def P_EFR(pickup_quality, space_sum):
     flag = 0
-    global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number, O_i, O_v, delta_d
+    global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number, O_i, O_v, delta_d, scale_ratio
     # space_sum = get_space_sum(pickup_quality, space_matrix)
+    space_matrix = space_matrix * scale_ratio
+    time_matrix = time_matrix * scale_ratio
+    space_sum *= scale_ratio
 
     while space_sum > O_v:
         
@@ -174,6 +181,8 @@ def P_EFR(pickup_quality, space_sum):
     
     print("EFR Results :")
     time_sum = get_time_sum(pickup_quality, time_matrix) 
+    time_sum /= scale_ratio
+    space_sum /= scale_ratio
 
     print("pickup_quality",pickup_quality)
     print("time_sum (Have no data)", time_sum)
@@ -188,6 +197,9 @@ def P_FIFO(pickup_quality, space_sum):
 
     global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number, O_i, O_v, delta_d
     # space_sum = get_space_sum(pickup_quality, space_matrix)
+    space_matrix = space_matrix * scale_ratio
+    time_matrix = time_matrix * scale_ratio
+    space_sum *= scale_ratio
 
     while space_sum > O_v:
         if np.all(np.array(pickup_quality)==len(pre_d_selected)-1):
@@ -211,6 +223,8 @@ def P_FIFO(pickup_quality, space_sum):
     # print("FIFO Final :", output_qualuity)
     print("FIFO Results :")
     time_sum = get_time_sum(pickup_quality, time_matrix) 
+    time_sum /= scale_ratio
+    space_sum /= scale_ratio
 
     print("pickup_quality",pickup_quality)
     print("time_sum (Have no data)", time_sum)
@@ -220,11 +234,14 @@ def P_FIFO(pickup_quality, space_sum):
         pickup_quality_transformed.append([pre_d_selected[i][0], pre_d_selected[i][1]])
 
     return time_sum, pickup_quality_transformed
-   
   
 def P_heuristic_log(pickup_quality, space_sum, log, day_list):
     
-    global time_matrix, space_matrix, profit_matrix, pre_d_selected, clip_number, O_i, O_v, delta_d
+    global time_matrix, space_matrix, profit_matrix, pre_d_selected, clip_number, O_i, O_v, delta_d, scale_ratio
+    space_matrix = space_matrix * scale_ratio
+    time_matrix = time_matrix * scale_ratio
+    space_sum *= scale_ratio
+
     og_total_video_size = space_sum
     time_sum = 0
     time_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
@@ -237,71 +254,83 @@ def P_heuristic_log(pickup_quality, space_sum, log, day_list):
         space_matrix_sorted[i] = space_matrix[i][argsort_matrix[i]]
         profit_matrix_sorted[i] = profit_matrix[i][argsort_matrix[i]]
 
-    profit_list = []
+    ## To know where is the original quality placed, the value of sorted_quality is the location corresponding to sorted matrix
+    arg_argsort_matrix = np.argsort(np.argsort((-space_matrix)))
+    sorted_quality = pickup_quality.copy()
+    
     for c, q in enumerate(pickup_quality):
+        sorted_quality[c] = arg_argsort_matrix[c][q]
+    profit_list = []
+    for c, q in enumerate(sorted_quality):
         s = space_matrix_sorted[c][q]
-        if s>0 and pickup_quality[c] < len(pre_d_selected)-1:
+        if s>0 and sorted_quality[c] < len(pre_d_selected)-1:
             profit_list.append((c, profit_matrix_sorted[c][q]/s)) 
+
+
+    time_sum = 0
+    for t_key,v in enumerate(sorted_quality):
+        time_sum += time_matrix_sorted[t_key][v]
+    time_sum /= scale_ratio
+
+    print("Before downsampled...", time_sum) # should be zero
+
 
     while space_sum > O_v or time_sum > delta_d:
         victim_c = min(profit_list, key= lambda x: x[1])
-
         c = victim_c[0]
         profit_list.remove(victim_c)
-        d = pickup_quality[c] + 1
+        d = sorted_quality[c] + 1
 
-        if pickup_quality[c]==space_matrix_sorted.shape[1]-1:
+
+        if sorted_quality[c]==space_matrix_sorted.shape[1]-1:
             print("the victim can not be downsample anymore")
             continue
 
-        space_sum = space_sum - space_matrix_sorted[c][pickup_quality[c]] + space_matrix_sorted[c][d] 
-        ## logging
-        if log>-1:
-            try:
-                with open('experiments/expect_heu_log.csv','a') as file:
-                    csv_writer = csv.writer(file)
-                    csv_writer.writerow([space_sum])
+        space_sum = space_sum - space_matrix_sorted[c][sorted_quality[c]] + space_matrix_sorted[c][d] 
+        # # logging
+        # if log>-1:
+        #     with open('experiments/expect_heu_log.csv','a') as file:
+        #             csv_writer = csv.writer(file)
+        #             csv_writer.writerow([space_sum])
+        #     try:
+        #         b_fps, b_bitrate = pre_d_selected[argsort_matrix[c][sorted_quality[c]]]
+        #         if b_fps!=24 and b_bitrate!=1000: 
+        #             down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(b_fps)+"\' AND \"bitrate\"=\'"+str(b_bitrate)+"\'"))[0][0]
+        #             before_size = down_result['raw_size'] * down_result['ratio']
+        #         else:
+        #             down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(b_fps)+"\' AND \"bitrate\"=\'"+str(500)+"\'"))[0][0]
+        #             before_size = down_result['raw_size']
+        #     except Exception as e:
+        #         print("before:",b_fps, b_bitrate)
+        #         print(e)
+        #         sys.exit()
 
-                b_fps, b_bitrate = ((np.array(pre_d_selected))[argsort_matrix[c]])[pickup_quality[c]]
-                if b_fps!=24 and b_bitrate!=1000: 
-                    down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(b_fps)+"\' AND \"bitrate\"=\'"+str(b_bitrate)+"\'"))[0][0]
-                    before_size = down_result['raw_size'] * down_result['ratio']
-                else:
-                    down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(b_fps)+"\' AND \"bitrate\"=\'"+str(500)+"\'"))[0][0]
-                    before_size = down_result['raw_size']
-            except Exception as e:
-                print("before:",b_fps, b_bitrate)
-                print(e)
-                sys.exit()
+        #     try:
+        #         r_fps, r_bitrate = pre_d_selected[argsort_matrix[c][d]]
+        #         if r_fps!=0 and r_bitrate!=0:
+        #             down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(r_fps)+"\' AND \"bitrate\"=\'"+str(r_bitrate)+"\'"))[0][0]
+        #             after_size = down_result['raw_size'] * down_result['ratio']
+        #         else:
+        #             after_size = 0
 
-            try:
-                r_fps, r_bitrate = ((np.array(pre_d_selected))[argsort_matrix[c]])[d]
-                if r_fps!=0 and r_bitrate!=0:
-                    down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+day_list[c]['name']+"\' AND \"fps\"=\'"+str(r_fps)+"\' AND \"bitrate\"=\'"+str(r_bitrate)+"\'"))[0][0]
-                    after_size = down_result['raw_size'] * down_result['ratio']
-                else:
-                    after_size = 0
-
-                with open('experiments/real_heu_log.csv','a') as file:
-                    og_total_video_size = og_total_video_size - before_size + after_size
-                    csv_writer = csv.writer(file)
-                    csv_writer.writerow([og_total_video_size])
-            except Exception as e:
-                print("after:", r_fps, r_bitrate)
-                print(e)
-                sys.exit()
-
-        
-
-
+        #         with open('experiments/real_heu_log.csv','a') as file:
+        #             og_total_video_size = og_total_video_size - before_size + after_size
+        #             csv_writer = csv.writer(file)
+        #             csv_writer.writerow([og_total_video_size])
+                    
+        #     except Exception as e:
+        #         print("after:", r_fps, r_bitrate)
+        #         print(e)
+        #         sys.exit()
+            
+        s = space_matrix_sorted[c][d]
+        sorted_quality[c] = d
 
         time_sum = 0
-        for t_key,v in enumerate(pickup_quality):
+        for t_key,v in enumerate(sorted_quality):
             time_sum += time_matrix_sorted[t_key][v]
+        time_sum /= scale_ratio
 
-
-        s = space_matrix_sorted[c][d]
-        pickup_quality[c] = d
         if s > 0: ## make sure the last one is zero and not divide zero
             profit_list.append((c, profit_matrix_sorted[c][d]/s)) 
 
@@ -309,16 +338,17 @@ def P_heuristic_log(pickup_quality, space_sum, log, day_list):
             print("np video")
             break
 
-        if space_sum < O_v:
+        if space_sum/O_v < 0.8:
             break
 
-    
     # Convert to the correct order
-    for k_i, i in enumerate(pickup_quality):
+    for k_i, i in enumerate(sorted_quality):
         pickup_quality[k_i] = argsort_matrix[k_i][i]
         
     #space should follow the real result
-    time_sum = get_time_sum(pickup_quality, time_matrix_sorted) 
+    time_sum = get_time_sum(pickup_quality, time_matrix) 
+    time_sum /= scale_ratio
+    space_sum /= scale_ratio
 
     print("pickup_quality",pickup_quality)
     print("except_time_sum", time_sum)
@@ -326,74 +356,9 @@ def P_heuristic_log(pickup_quality, space_sum, log, day_list):
 
     pickup_quality_transformed = []
     for c_id, i in enumerate(pickup_quality):
-        transformed_pre_d_selected = ((np.array(pre_d_selected))[argsort_matrix[c_id]])
-        pickup_quality_transformed.append([transformed_pre_d_selected[i][0], transformed_pre_d_selected[i][1]])
-
-    return time_sum, pickup_quality_transformed
-    
-def P_heuristic(pickup_quality, space_sum):
-
-    global time_matrix, space_matrix, profit_matrix, pre_d_selected, clip_number, O_i, O_v, delta_d
-
-    time_sum = 0
-    time_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
-    space_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
-    profit_matrix_sorted = np.zeros((clip_number, len(pre_d_selected)))
-
-    argsort_matrix = np.argsort((-space_matrix))
-    for i in range(clip_number):
-        time_matrix_sorted[i] = time_matrix[i][argsort_matrix[i]]
-        space_matrix_sorted[i] = space_matrix[i][argsort_matrix[i]]
-        profit_matrix_sorted[i] = profit_matrix[i][argsort_matrix[i]]
-
-    profit_list = []
-    for c, q in enumerate(pickup_quality):
-        s = space_matrix_sorted[c][q]
-        if s>0 and pickup_quality[c] < len(pre_d_selected)-1:
-            profit_list.append((c, profit_matrix_sorted[c][q]/s)) 
-
-    while space_sum > O_v or time_sum > delta_d:
-        victim_c = min(profit_list, key= lambda x: x[1])
-
-        c = victim_c[0]
-        profit_list.remove(victim_c)
-        d = pickup_quality[c] + 1
-
-        if pickup_quality[c]==space_matrix_sorted.shape[1]-1:
-            print("the victim can not be downsample anymore")
-            continue
-
-        space_sum = space_sum - space_matrix_sorted[c][pickup_quality[c]] + space_matrix_sorted[c][d] 
-        time_sum = 0
-        for t_key,v in enumerate(pickup_quality):
-            time_sum += time_matrix_sorted[t_key][v]
-
-
-        s = space_matrix_sorted[c][d]
-        pickup_quality[c] = d
-        if s > 0: ## make sure the last one is zero
-            profit_list.append((c, profit_matrix_sorted[c][d]/s)) 
-
-        if len(profit_list) == 0:
-            print("np video")
-            break
-
-    
-    # Convert to the correct order
-    for k_i, i in enumerate(pickup_quality):
-        pickup_quality[k_i] = argsort_matrix[k_i][i]
-        
-    #space should follow the real result
-    time_sum = get_time_sum(pickup_quality, time_matrix_sorted) 
-
-    print("pickup_quality",pickup_quality)
-    print("except_time_sum", time_sum)
-    print("expect space_sum:", space_sum)
-
-    pickup_quality_transformed = []
-    for i in pickup_quality:
+        # transformed_pre_d_selected = ((np.array(pre_d_selected))[argsort_matrix[c_id]])
         pickup_quality_transformed.append([pre_d_selected[i][0], pre_d_selected[i][1]])
-
+    
     return time_sum, pickup_quality_transformed
     
 def P_opt(pickup_quality):
@@ -476,38 +441,86 @@ def P_opt(pickup_quality):
         pickup_quality_transformed.append([pre_d_selected[i][0], pre_d_selected[i][1]])
     return time_sum, pickup_quality_transformed
 
-def P_approx(pickup_quality):
-    global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number, O_i, O_v, delta_d
-    # space_sum = get_space_sum(pickup_quality, space_matrix)
+def P_approx(pickup_quality, space_sum):
+    global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number, O_i, O_v, delta_d, scale_ratio
+    space_matrix = space_matrix * scale_ratio
+    time_matrix = time_matrix * scale_ratio
+    space_sum *= scale_ratio
 
-    while space_sum > O_v:
-        if np.all(np.array(pickup_quality)==len(pre_d_selected)-1):
+    time_matrix = time_matrix.astype(float); profit_matrix = profit_matrix.astype(float)
+    d = 2; low_bound = profit_matrix.max(); low_bound_copy = low_bound.copy(); up_bound = clip_number * low_bound
+    x = 0.4 * up_bound + low_bound
+    time_matrix += 1
+    space_matrix += 1
+    ratio_time_matrix = time_matrix / delta_d
+    ratio_space_matrix = space_matrix / O_v
+    ratio_sum_matrix = np.add(ratio_time_matrix, ratio_space_matrix)
+    
+
+    ratio_matrix = profit_matrix / ratio_sum_matrix
+
+    ratio_matrix[:,-1] = 0
+    res_pickup_quality = [(len(pre_d_selected)-1) for i in range(clip_number)]
+    for i in range(clip_number):
+        if pickup_quality[i]==0:
+            res_pickup_quality[i] = len(pre_d_selected)-1
+        else:
+            res_pickup_quality[i] = pickup_quality[i]
+    prev_x = 0
+    # print(res_pickup_quality)
+    while True:
+        threshold = (x / d)
+        # print("up_bound", up_bound, "low_bound", low_bound, "threshold", threshold)
+        J = list()
+        for c in range(clip_number):
+            # print("ratio: ",ratio_matrix[c])
+            candidated = np.where(ratio_matrix[c]>threshold)[0] ## idx just equals the quality
+            candidated = np.delete(candidated, np.where(candidated<=pickup_quality[c]))
+            if candidated.shape[0]>0:
+                # print("candidated",candidated,"candidated value: ",(ratio_matrix[c])[candidated])
+                candidated_idx = np.argmax((ratio_matrix[c])[candidated])
+                select_quality_idx = candidated[candidated_idx]
+                # print("select_quality_idx", select_quality_idx)
+                J.append([c, select_quality_idx, profit_matrix[c][select_quality_idx]])
+            else:
+                continue
+        # print("J", J)
+        if len(J)>0:
+            J_norm = np.array(J, dtype=float).sum(axis=0)[-1]
+        else:
+            J_norm = 0
+        # print("J_norm: ", J_norm)
+        if J_norm < 0.25 * x:
+            up_bound = x * 1.25
+            # print("Adjust up_bound")
+        else:
+            low_bound = x * 0.25
+            # print("Adjust low bound")
+        
+        ## Current Choice and used time
+        for j in J:
+            # print("update clip %d to quality %d"%(j_idx, j[0]))
+            res_pickup_quality[j[0]] = j[1]
+
+        # print("res_pickup_quality", res_pickup_quality)
+        time_sum = get_time_sum(res_pickup_quality, time_matrix)
+        time_sum /= scale_ratio
+        if up_bound - 5 * low_bound <= 0.25*low_bound_copy:
+            x = up_bound / 5 + 2 * low_bound
+            print("x:", x)
+        else:
             break
 
-        flag = flag%len(pickup_quality)
+        if x == prev_x:
+            break
+        else:
+            prev_x = x  
 
-        if pickup_quality[flag] == len(pre_d_selected)-1:
-            flag+=1
-            continue
-        else: # delete the file
-            space_sum = space_sum - space_matrix[flag][pickup_quality[flag]]
-            pickup_quality[flag] = len(pre_d_selected)-1
-
-        
-        # print(pickup_quality,space_sum)
-        flag += 1
-
-    # pre_d_selected = np.array(pre_d_selected)
-    # output_qualuity =  pre_d_selected[pickup_quality]
-    # print("FIFO Final :", output_qualuity)
-    print("FIFO Results :")
-    time_sum = get_time_sum(pickup_quality, time_matrix) 
-
-    print("pickup_quality",pickup_quality)
-    print("time_sum (Have no data)", time_sum)
+    print("pickup_quality",res_pickup_quality)
+    print("time_sum", time_sum)
 
     pickup_quality_transformed = []
-    for i in pickup_quality:
+    for i in res_pickup_quality:
         pickup_quality_transformed.append([pre_d_selected[i][0], pre_d_selected[i][1]])
 
     return time_sum, pickup_quality_transformed
@@ -536,13 +549,8 @@ def log_database(algo, day, hour, total_video_size):
 def main(args):
 
     log = 0
-    if os.path.isfile('experiments/expect_heu_log.csv'):
-        os.remove('experiments/expect_heu_log.csv')
-    if os.path.isfile('experiments/real_heu_log.csv'):
-        os.remove('experiments/real_heu_log.csv')
-
     global pre_d_selected, time_matrix, space_matrix, profit_matrix, clip_number, algo, O_i, O_v, delta_d, scale_ratio
-    O_v = int(args.ov); delta_d = int(args.delta); O_i = int(args.oi); algo = str(args.algo); scale_ratio = float(args.scale)
+    O_v = int(args.ov); delta_d = int(args.delta); O_i = int(args.oi); algo = str(args.algo); scale_ratio = float(args.scale); use_low_feature = int(args.lowfeature)
     pre_d_selected = [[24,1000],[24,500],[12,500],[12,100],[6,100],[6,10],[1,10],[0,0]]
 
     ### Read all videos
@@ -551,7 +559,7 @@ def main(args):
     total_video_ia = 0
     video_list = []
     video_in_server = [] 
-    start = 9
+    start = 4
     end = 16
     sample_length_full_quality_info_df = None
     full_length_sample_quality_info_df = None
@@ -580,6 +588,7 @@ def main(args):
             new_coming_video_name = video_list[day_flag]['name']
             new_coming_video_size = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+new_coming_video_name+"\'"))[0][0]['raw_size']
             total_video_size += new_coming_video_size
+            # print("SELECT * FROM L_"+algo+"_exp_length where \"name\"=\'"+new_coming_video_name+"\'")
             new_coming_video_SLE_length = list(result_DBclient.query("SELECT * FROM L_opt_exp_length where \"name\"=\'"+new_coming_video_name+"\'"))[0][0]
             new_coming_video_info = (full_info_df.loc[(full_info_df['name']==new_coming_video_name) & (full_info_df['a_type']=='illegal_parking0')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='illegal_parking0')]['value'].iloc[0]) 
             new_coming_video_info += (full_info_df.loc[(full_info_df['name']==new_coming_video_name) & (full_info_df['a_type']=='people_counting')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='people_counting')]['value'].iloc[0]) 
@@ -681,7 +690,8 @@ def main(args):
                     space_matrix[i][j] = target_size_row * target_ratio_row.loc[(target_time_row['fps'] == str(pre_d_selected[j][0])) & (target_ratio_row['bitrate'] == str(pre_d_selected[j][1]))]['value']
                     profit_matrix[i][j] += peo_info * target_degraded_q_row.loc[(target_degraded_q_row['fps'] == str(pre_d_selected[j][0])) & (target_degraded_q_row['bitrate'] == str(pre_d_selected[j][1])) & (target_degraded_q_row['a_type'] == 'people_counting')]['value'].iloc[0]
                     profit_matrix[i][j] += ill_info * target_degraded_q_row.loc[(target_degraded_q_row['fps'] == str(pre_d_selected[j][0])) & (target_degraded_q_row['bitrate'] == str(pre_d_selected[j][1])) & (target_degraded_q_row['a_type'] == 'illegal_parking0')]['value'].iloc[0]
-                    profit_matrix[i] += pca_value
+                    if use_low_feature:
+                        profit_matrix[i] += pca_value
 
             time_matrix[i][j+1] = 0
             space_matrix[i][j+1] = 0
@@ -698,6 +708,8 @@ def main(args):
             time_sum, pickup_quality_transformed = P_heuristic_log(pickup_quality, total_video_size, log, day_list)
             log += 1
             # time_sum, pickup_quality_transformed = P_heuristic(pickup_quality, total_video_size)
+        elif algo == 'approx':
+            time_sum, pickup_quality_transformed = P_approx(pickup_quality, total_video_size)
         elif algo=='opt':
             time_sum, pickup_quality_transformed = P_opt(pickup_quality)
         else:
@@ -707,9 +719,10 @@ def main(args):
         
         oversize=0
         ### Record the downsample Results: video_in_server/Downsampling result of different Algo
-        for i, d in enumerate(day_list):       
+        
+
+        for i, d in enumerate(day_list):  
             og_size= list(result_DBclient.query("SELECT size FROM video_in_server_"+algo+" where \"name\"=\'"+d['name']+"\'"))[0][0]['size']
-     
             if pickup_quality_transformed[i][0]==0 and pickup_quality_transformed[i][1]==0:
                 result_DBclient.query("DELETE FROM video_in_server_"+algo+" where \"name\"=\'" + d['name'] + "\'")
                 print("Delete clip %s"%(d['name']))
@@ -719,8 +732,11 @@ def main(args):
                 continue
             else: ## update the quality of video in server
                 result_fps = str(pickup_quality_transformed[i][0]); result_bitrate = str(pickup_quality_transformed[i][1])
-
-                down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+d['name']+"\' AND \"fps\"=\'"+str(result_fps)+"\' AND \"bitrate\"=\'"+str(result_bitrate)+"\'"))[0][0]
+                try:
+                    down_result = list(DBclient.query("SELECT * FROM down_result where \"name\"=\'"+d['name']+"\' AND \"fps\"=\'"+str(result_fps)+"\' AND \"bitrate\"=\'"+str(result_bitrate)+"\'"))[0][0]
+                except Exception as e:
+                    print("Not found sampled_video: name:", d['name'], " prev_fps: ",str(d['fps'])," prev_bitrate: ",str(d['bitrate'])," fps:", result_fps, " bitrate:", result_bitrate)
+                    sys.exit()
                 result_size = down_result['raw_size'] * down_result['ratio']
             
                 oversize+=(result_size-og_size)
@@ -737,16 +753,19 @@ def main(args):
                 except:
                     print("Not found sampled_video: name:", day_list[i]['name'], "fps:", result_fps, "bitrate:", result_bitrate)
                     preserved_video_info_peo = 0
+                
                 try:
-                    preserved_video_info_pca = PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value']
+                    preserved_video_info_pca = PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value'] if use_low_feature else 0
                 except:
                     preserved_video_info_pca = 0
+
                 preserved_video_info = preserved_video_info_ill+ preserved_video_info_peo + preserved_video_info_pca
                 
 
                 origin_video_info = (full_info_df.loc[(full_info_df['name']==day_list[i]['name']) & (full_info_df['a_type']=='illegal_parking0')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='illegal_parking0')]['value'].iloc[0]) 
                 origin_video_info += (full_info_df.loc[(full_info_df['name']==day_list[i]['name']) & (full_info_df['a_type']=='people_counting')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='people_counting')]['value'].iloc[0]) 
-                origin_video_info += PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value']
+                if use_low_feature:
+                    origin_video_info += PCATable.loc[PCATable['name']==day_list[i]['name']].iloc[0]['value']
                 
                 if preserved_video_info > origin_video_info:
                     print("origin_video_info", origin_video_info, "preserved_video_info", preserved_video_info)
@@ -796,7 +815,7 @@ def main(args):
         print("result total_video_size", total_video_size)
         print("------------Finish Downsampled------------")
         print("Size change:", oversize)
-
+        # sys.exit()
 def drop_measurement_if_exist(table_name):
     result = result_DBclient.query('SELECT * FROM '+table_name)
     result_point = list(result.get_points(measurement=table_name))
@@ -812,10 +831,15 @@ if __name__=="__main__":
     parser.add_argument('-i','--oi', required=True, help='Trigger Watermark (MB)')
     parser.add_argument('-a','--algo', required=True, help='Downsampling Strategy (EF, EFR, FIFO, heuristic, opt)')
     parser.add_argument('-s','--scale', required=True, help='scale_ratio')
+    parser.add_argument('-lf','--lowfeature', required=True, help='Consider low level feature or not')
 
     args = parser.parse_args()
     drop_measurement_if_exist("P_exp_result_"+str(args.algo))
     drop_measurement_if_exist("log_every_hour_"+str(args.algo))
     drop_measurement_if_exist("video_in_server_"+str(args.algo))
-    
+    if os.path.isfile('experiments/expect_heu_log.csv'):
+        os.remove('experiments/expect_heu_log.csv')
+    if os.path.isfile('experiments/real_heu_log.csv'):
+        os.remove('experiments/real_heu_log.csv')
+
     main(args)
