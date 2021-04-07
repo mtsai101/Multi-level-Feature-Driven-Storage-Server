@@ -118,11 +118,7 @@ if __name__=="__main__":
     # with Pool(64) as p:
         # p.map(launch_shot_detector, feature_pending_list)
     #     print("Shot Detection Completed")
-    
 
-    # with Pool(64) as p:
-        # p.map(launch_shot_detector, feature_pending_list)
-    #     print("Shot Detection Completed")
 
     # for pending_tuple in feature_pending_list:
     #     feature_procs(pending_tuple)

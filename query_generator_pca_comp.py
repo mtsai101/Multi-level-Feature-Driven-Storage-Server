@@ -33,22 +33,21 @@ UNSEEN_ANALY_LIST = ["illegal_parking1", "car_counting"]
 if __name__=='__main__':
 
     start_day = 14
-    end_day = 16
+    end_day = 15
     size  = (end_day-start_day+1)
-    poisson_peo_rate = np.random.poisson(8,size) # 10 request / 24 hour 
-    poisson_ill_rate = np.random.poisson(8,size) # 10 request / 24 hour 
+    poisson_rate = np.random.poisson(8,size) # 10 request / 24 hour 
 
     query_video_list = []
 
     rng = default_rng()
     full_length_sample_quality_info_df = None
     full_info_df = None
-    for r in range(start_day,end_day):
-        if r==12 or r==11:
-            continue
+    for r in range(start_day,end_day+1):
+        # if r==12 or r==11:
+            # continue
         result = DBclient.query("SELECT * FROM raw_11_"+str(r))
         all_day_video = list(result.get_points(measurement="raw_11_"+str(r)))
-        chosen_list = rng.choice(len(all_day_video), poisson_peo_rate[r-start_day],replace=True)
+        chosen_list = rng.choice(len(all_day_video), poisson_rate[r-start_day],replace=True)
         chosen_list = sorted(chosen_list)
         for c in chosen_list:
             query_video_list.append(all_day_video[c])
