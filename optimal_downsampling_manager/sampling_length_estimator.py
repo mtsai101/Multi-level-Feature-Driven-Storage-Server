@@ -23,7 +23,8 @@ class SamplingLengthEstimator(object):
         self.conn_send2Analytic = None
         self.ready = threading.Event()
     
-        self.DBclient = InfluxDBClient('localhost', data['global']['database_port'], 'root', 'root', data['global']['database_name'])
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+
         self.VClistener = Listener(('localhost',int(data['global']['camera2SLE'])))
     
 

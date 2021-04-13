@@ -13,7 +13,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="3"
 class Transformer:
     def __init__(self):
 
-        self.DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
         self.total_downsample_time = 0 
 
     def transform(self,P_decision):

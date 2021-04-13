@@ -1,8 +1,13 @@
 import cv2
 import numpy as np
 from influxdb import InfluxDBClient
-DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
 import time
+import yaml
+
+with open('/home/min/Multi-level-Feature-Driven-Storage-Server/configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+
+DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['database_port'], database=data['global']['database_name'], username='root', password='root')
 class ShotDetector():
     def __init__(self, threshold=3, min_percent=0.9999, min_scene_len=48, block_size=8):
         """Initializes threshold-based scene detector object."""
@@ -66,6 +71,7 @@ class ShotDetector():
     def detect(self, input_path): # the input_path here is background subtraction already
         cap = cv2.VideoCapture(input_path)
         count = 0
+        print("Detecting shot on %s..."%(input_path))
         while True:
             ret, frame = cap.read()
             if ret is False:
@@ -77,20 +83,24 @@ class ShotDetector():
 
 
     def save_results(self, input_path): # the input_path here is the raw video
+        s = input_path.split('/')
         json_body = [
                 {
                     "measurement": "shot_list",
                     "tags": {
-                        "name": str(input_path)
+                        "base_path": data['global']['base_path'],
+                        "storage_path": data['global']['storage_path'],
+                        "date": s[-2],
+                        "name": s[-1]
                     },
                     "fields": {
                         "list": str(self.shot_list)
                     }
                 }
             ]
-        DBclient.write_points(json_body)
+        DBclient.write_points(json_body, time_precision='ms')
 
-if __name__=="__main__":
+# if __name__=="__main__":
     # s = time.time()
     # shotDetector = ShotDetector()
     # input_path = "/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-10_15:20:05.mp4"
@@ -98,10 +108,10 @@ if __name__=="__main__":
     # shotDetector.save_results("/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-10_15:20:05.mp4")
     # print(shotDetector.shot_list, time.time()-s)
     # del shotDetector
-    s = time.time()
-    shotDetector = ShotDetector()
-    input_path="/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_16:07:42.mp4"
-    shotDetector.detect(input_path)
-    shotDetector.save_results("/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_16:07:42.mp4")
-    # print(shotDetector.shot_list, time.time()-s)
-    del shotDetector
+    # s = time.time()
+    # shotDetector = ShotDetector()
+    # input_path="/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/background/background_LiteOn_P1_2019-11-12_16:07:42.mp4"
+    # shotDetector.detect(input_path)
+    # shotDetector.save_results("/home/min/Analytic-Aware_Storage_Server/storage_server_volume/raw_videos/raw_11_9/ipcam1/LiteOn_P1_2019-11-12_16:07:42.mp4")
+    # # print(shotDetector.shot_list, time.time()-s)
+    # del shotDetector

@@ -13,7 +13,6 @@ import tensorflow as tf
 
 # from tensorflow.image import ResizeMethod 
 from tensorflow.keras import datasets, layers, models
-import matplotlib.pyplot as plt
 input_set={
         # "hwaccel":'cuda',
         # "hwaccel_output_format":'cuda'

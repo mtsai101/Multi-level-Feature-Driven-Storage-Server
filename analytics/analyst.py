@@ -43,7 +43,8 @@ class Analyst(object):
         self.write2disk = False
         self.writer = None
         self.clip_name = None
-        self.DBclient = InfluxDBClient('localhost', data['global']['database_port'], 'root', 'root', data['global']['database_name'])
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+
         self.shot_list = None
         self.shot_list_index = 0
         self.per_frame_target_result = []

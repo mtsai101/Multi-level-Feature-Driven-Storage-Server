@@ -19,7 +19,7 @@ class DownSampleDecisionMaker(object):
         self.conn_listenDBAgent = None
 
         self.ready = threading.Event()
-        self.DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
         self.DBAlistener = Listener(('localhost',int(data['global']['agent2DDM'])))
 
 

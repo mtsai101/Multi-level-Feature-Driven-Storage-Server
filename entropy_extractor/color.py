@@ -34,7 +34,6 @@ def get_color_entropy(input_path, shot_list, return_value):
 
 
 
-
 # if __name__=="__main__":
 #     input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
 #     s = time.time()

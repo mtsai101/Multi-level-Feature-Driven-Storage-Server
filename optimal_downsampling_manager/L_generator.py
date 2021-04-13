@@ -50,7 +50,7 @@ def generate_L(L_type='',clip_list=[], process_num=1):
                 The followings are for build the prediction models
             """
 
-            #DBclient = InfluxDBClient('localhost', data['global']['database_port'], 'root', 'root', 'storage')
+            # DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
             for clip in clip_list:
                 # decision = Decision(clip_name=clip['name'],a_type='illegal_parking0', a_parameter=1,fps=24.0,bitrate=1000.0, shot_list=shot_list)
                 decision = Decision(clip_name=clip['name'],

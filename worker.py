@@ -1,12 +1,16 @@
 from influxdb import InfluxDBClient
 import pandas as pd
 from optimal_downsampling_manager.resource_predictor.estimate_table import Full_IATable, Degraded_IATable, get_context, drop_measurement_if_exist, AnalyTimeTable, DownTimeTable, DownRatioTable, Degraded_Q_IATable
-# DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
 import csv
 import cv2
 import ast 
 import sys
 import os
+import yaml
+with open('configuration_manager/config.yaml','r') as yamlfile:
+    data = yaml.load(yamlfile,Loader=yaml.FullLoader)
+DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['database_port'], database=data['global']['database_name'], username='root', password='root')
+
 if __name__=='__main__':
     # result = list(DBclient.query("SELECT * FROM analy_result_raw_complete"))
     # with open("raw_11_5.csv", 'w') as csvfile:
@@ -38,7 +42,7 @@ if __name__=='__main__':
         Measurement shot length
     """
     # import ast
-    # DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')
+    # DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
     # result = list(DBclient.query("SELECT * FROM shot_list_test where \"name\"=\'./storage_server_volume/SmartPole/Pole1/2020-11-05_00-00-00/LiteOn_P1_2019-11-12_16:07:42.mp4\'"))
     
     # s_list = ast.literal_eval(result[0][0]['list'])
@@ -60,14 +64,7 @@ if __name__=='__main__':
     # analyTimeTable = AnalyTimeTable(True)
     # downTimeTable = DownTimeTable(True)
     # downRatioTable = DownRatioTable(True)
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    degraded_Q_IATable = Degraded_Q_IATable(True)
->>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
-=======
     # degraded_Q_IATable = Degraded_Q_IATable(True)
->>>>>>> d90c714b19d5bf9facea3454965b109d5a73aac7
 
 
     ## build degrade L_ia data for degrade L_ia Table
@@ -160,16 +157,8 @@ if __name__=='__main__':
     #     drop_measurement_if_exist(database)
 
 
-<<<<<<< HEAD
-    try:
-        print(a)
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno, e)
-=======
     ## Move measurement from storage to merge_storage
-    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'storage')
+    # DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
     # result = DBclient.query("SELECT * FROM analy_complete_sample_quality_result_inshot_11_6")
     # result_list = list(result.get_points(measurement = "analy_complete_sample_quality_result_inshot_11_6"))
     # json_body = []
@@ -198,14 +187,15 @@ if __name__=='__main__':
     #                         }
     #                     }
     #         )
-
-    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')        
+    # DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+        
     # DBclient.write_points(json_body, database='merge_storage', time_precision='ms', batch_size=40000, protocol='json')
 
 
 
     ## rename PCA
-    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')
+    # DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+
     # result = DBclient.query("SELECT * FROM visual_features_entropy_PCA_normalized")
     # result_list = list(result.get_points(measurement = "visual_features_entropy_PCA_normalized"))
     # data_points = []
@@ -228,7 +218,8 @@ if __name__=='__main__':
 
 
     ### Update data_points testing
-    # DBclient = InfluxDBClient('localhost', 8087, 'root', 'root', 'merge_storage')
+    # DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+
     # name= "water"
     # r = list(DBclient.query("SELECT * FROM meters where \"meter\"=\'"+name+"\'"))[0][0]
     # print(r)
@@ -277,36 +268,19 @@ if __name__=='__main__':
     #                 }
     #             ]
     #         DBclient.write_points(json_body)
-<<<<<<< HEAD
-            
->>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
-=======
 
-
-    ### Remove the duplicate data point
-    DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'merge_storage')
-    table_name = "baba"
+    # backup measurement to csv
+    # import csv
+    # DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'merge_storage')
+    table_name = "visual_features_entropy_unnormalized"
     result = list(DBclient.query("SELECT * FROM "+table_name))[0]
     json_body = []
+    with open('visual_features_entropy_unnormalized_4_15.csv','a') as f:
+            writer = csv.writer(f)
+            writer.writerow(['name', 'color', 'edge', 'conv', 'temp'])
     for r in result:
-        json_body.append(
-                        {
-                            "measurement": "analy_complete_sample_quality_result_inshot_11_11",
-                            "tags": {
-                                "a_type": r['a_type'],
-                                "day_of_week": r['day_of_week'],
-                                "time_of_day": r['time_of_day'],
-                                "a_parameter": r['a_parameter'], 
-                                "fps": r['fps'],
-                                "bitrate": r['bitrate']
-                            },
-                            "fields": {
-                                "total_frame_number": r['total_frame_number'],
-                                "name": r['name'],
-                                "time_consumption": r['time_consumption'],
-                                "target": r['target']
-                            }
-                        }
-                    )
-    DBclient.write_points(json_body, database='merge_storage', time_precision='ms', batch_size=1000, protocol='json')
->>>>>>> d90c714b19d5bf9facea3454965b109d5a73aac7
+        with open('visual_features_entropy_unnormalized_4_15.csv','a') as f:
+            writer = csv.writer(f)
+            name = "/".join(r['name'].split('/')[1:])
+            writer.writerow([name,  r['color'], r['edge'], r['conv'], r['temp']])
+

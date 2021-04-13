@@ -18,7 +18,7 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 class DB_agent(object):
     def __init__(self):
         self.pending_list = list()
-        self.DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database'], 'root', 'root', 'storage')
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
 
 
         self.conn_send2DDM = None

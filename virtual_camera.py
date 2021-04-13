@@ -27,7 +27,8 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 class WorkloadGen():
     def __init__(self):
         self.pending_list = list()
-        self.DBclient = InfluxDBClient('localhost', data['global']['database_port'], 'root', 'root', data['global']['database_name'])
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+
         # the current time 
         self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 30, hour = 15)   
         #the last updated time

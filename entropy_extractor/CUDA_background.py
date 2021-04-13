@@ -3,7 +3,7 @@ import time
 import numpy as np
 from ffmpeg_popen import get_video_size, start_ffmpeg_process_in, start_ffmpeg_process_out, read_frame, write_frame, output_set
 from functools import partial
-import matplotlib.pyplot as plt
+
 import cv2
 
 # input_path = "/home/min/Pole1_2020-11-04_16-00-01.mp4"

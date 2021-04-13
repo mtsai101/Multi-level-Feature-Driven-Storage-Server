@@ -8,7 +8,7 @@ import yaml
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
-DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', data['global']['database_name'])
+DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
 
 if __name__=='__main__':
     
@@ -151,31 +151,34 @@ if __name__=='__main__':
     #                 # os.system(cmd)
 
     # Save the shot list to databases
-    # shot_list=[]
-    # with open('./shot_list_4_15.csv', 'r') as csvfile:
-    #     rows = csv.reader(csvfile)
-    #     for row in rows:
-    #         row_s = row[0].split('/')
-    #         row_path = os.path.join("./storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
-    #         shot_list.append((row_path,row[1]))
+    shot_list=[]
+    with open('./shot_list_4_15.csv', 'r') as csvfile:
+        rows = csv.reader(csvfile)
+        for row in rows:
+            row_s = row[0].split('/')
+            # row_path = os.path.join("storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
+            vid_date = row_s[-2]
+            vid_name = row_s[-1]
+            shot_list.append((vid_date, vid_name, row[1]))
 
 
-    # sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
-    # for s in sorted_shot_list:
-    #     # print(s[0])
-    #     json_body = [
-    #                 {
-    #                     "measurement": "shot_list",
-    #                     "tags": {
-    #                         "name": str(s[0])
-    #                         ""
-    #                     },
-    #                     "fields": {
-    #                         "list": str(s[1])
-    #                     }
-    #                 }
-    #             ]
-    #     DBclient.write_points(json_body)
+    sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
+    for s in sorted_shot_list:
+        json_body = [
+                    {
+                        "measurement": "shot_list",
+                        "tags": {
+                            "base_path": data['global']['base_path'],
+                            "storage_path": data['global']['storage_path'],
+                            "date": str(s[0]),
+                            "name": str(s[1])
+                        },
+                        "fields": {
+                            "list": str(s[2])
+                        }
+                    }
+                ]
+        DBclient.write_points(json_body)
 
     ## Pressure test...
     # json_body = []
@@ -216,8 +219,7 @@ if __name__=='__main__':
     # result = DBclient.query("SELECT * FROM analy_result_raw_per_frame_inshot_4_9")
     # result_list = list(result.get_points(measurement='analy_result_raw_per_frame_inshot_4_9'))
 
-    # back_DBclient = InfluxDBClient('localhost', data['global']['database'], 'root', 'root', 'storage')
-
+    # back_DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
     # json_body=[] 
     # for f in result_list:
         
@@ -244,3 +246,23 @@ if __name__=='__main__':
     #         ]
     #         back_DBclient.write_points(json_body)
 
+
+    # result = DBclient.query("SELECT * FROM test_shot_list")
+    # result_list = list(result.get_points(measurement='test_shot_list'))
+    # for r in result_list:
+    #     # l = r['name'].split('/')
+    #     # s = os.path.join(data['global']['base_path'], "/".join(l[1:]))
+    #     json_body = [
+    #                 {
+    #                     "measurement": "shot_list",
+    #                     "tags": {
+    #                         "base_path": r['base_path'],
+    #                         "storage_path": r['storage_path']
+    #                     },
+    #                     "fields": {
+    #                         "list": r['list']
+    #                     }
+    #                 }
+    #             ]
+        
+    #     DBclient.write_points(json_body,time_precision='ms')
