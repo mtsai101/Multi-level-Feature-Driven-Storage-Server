@@ -88,11 +88,11 @@ def feature_procs(pending_tuple):
     except Exception as e:
         print(e)
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    # finally:
-    #     color_proc.close() 
-    #     edge_proc.close() 
-    #     conv_proc.close()
-    #     temp_proc.close()
+    finally:
+        color_proc.close() 
+        edge_proc.close() 
+        conv_proc.close()
+        temp_proc.close()
 
 
 
@@ -101,7 +101,7 @@ if __name__=="__main__":
 
     feature_pending_list = [] # (input_path, back_path)
     month = 11
-    for day in range(23, 25):
+    for day in range(21, 24):
         if month<=0:
             month = "0" + str(month)
         if day<=9:
@@ -118,6 +118,7 @@ if __name__=="__main__":
                 continue
             if not os.path.isdir(os.path.join(input_dir,"background")):
                 os.mkdir(os.path.join(input_dir,"background"))
+
 
             back_path = os.path.join(output_dir,"background_"+v)
             
