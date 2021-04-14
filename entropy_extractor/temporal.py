@@ -5,13 +5,13 @@ import time
 from conv import SimpleConv
 from entropy import conv_entropy
 gpus = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_virtual_device_configuration(gpus[0], [
+tf.config.experimental.set_virtual_device_configuration(gpus[1], [
   tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)
 ])
 
 simpleConv = SimpleConv()
 def get_temp_conv_entropy(input_file, shot_list, return_value):
-    
+    stime = time.time()
     cap = cv2.VideoCapture(input_file)
     frame_count=0
     frame_sequence = []
@@ -46,6 +46,7 @@ def get_temp_conv_entropy(input_file, shot_list, return_value):
         frame_count += 1
         
     return_value.value = total_entropy
+    print("temp done: %.4f "%(time.time()-stime), input_file)
 
 # if __name__=="__main__":
     # s = time.time()

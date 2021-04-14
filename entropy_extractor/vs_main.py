@@ -101,7 +101,7 @@ if __name__=="__main__":
 
     feature_pending_list = [] # (input_path, back_path)
     month = 11
-    for day in range(16, 23):
+    for day in range(23, 25):
         if month<=0:
             month = "0" + str(month)
         if day<=9:

@@ -5,6 +5,7 @@ import numpy as np
 import concurrent.futures
 
 def get_color_entropy(input_path, shot_list, return_value):
+    stime = time.time()
     vs = cv2.VideoCapture(input_path)
     total_entropy = 0
     frame_count = 0
@@ -30,6 +31,7 @@ def get_color_entropy(input_path, shot_list, return_value):
         
 
     return_value.value = total_entropy
+    print("color done: %.4f "%(time.time()-stime), input_file)
 
 
 

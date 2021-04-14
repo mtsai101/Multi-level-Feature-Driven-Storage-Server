@@ -1,14 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from calculate_recon_error import *
+from .calculate_recon_error import *
 from sklearn.random_projection import johnson_lindenstrauss_min_dim
 import pandas as pd
 from scipy.spatial import distance_matrix
 from scipy.stats import pearsonr, spearmanr
-from visualize_matrix import *
-from visualize_sample_reconstruction import *
-from coranking_matrix import *
-from plt2base64 import *
+from .visualize_matrix import *
+from .visualize_sample_reconstruction import *
+from .coranking_matrix import *
+from .plt2base64 import *
 import json
 import os
 import csv

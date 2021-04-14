@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from plt2base64 import *
+from .plt2base64 import *
 
 def visualize_matrix(dm, cmap = None, silent = False):
 

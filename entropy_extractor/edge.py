@@ -64,6 +64,7 @@ class EdgeHistogramComputer():
 
 edgeHistogramComputer = EdgeHistogramComputer(12,12)
 def get_edge_entropy(input_file, shot_list, return_value):
+    stime = time.time()
     vs = cv2.VideoCapture(input_file)
     total_entropy = 0
     frame_count = 0
@@ -82,7 +83,9 @@ def get_edge_entropy(input_file, shot_list, return_value):
         frame_count += 1
         
     return_value.value = total_entropy
+    print("Edge done: %.4f "%(time.time()-stime), input_file)
     # return total_entropy
+
 # if __name__=="__main__":
 #     input_file = "/home/min/background_LiteOn_P1_2019-11-12_15:00:36.mp4"
 #     s = time.time()

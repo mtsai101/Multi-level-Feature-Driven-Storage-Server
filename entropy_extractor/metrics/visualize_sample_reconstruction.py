@@ -2,7 +2,7 @@
 # Sample Reconstruction Visualization: Compare orginal and reconstructed samples side by side
 
 from matplotlib import pyplot as plt
-from plt2base64 import *
+from .plt2base64 import *
 
 def visualize_sample_reconstruction(X, Xr, X_names, N = 3, silent = False):
     
