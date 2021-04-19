@@ -8,7 +8,7 @@ import yaml
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
-DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['database_port'], database=data['global']['database_name'], username='root', password='root')
 
 if __name__=='__main__':
     
@@ -150,35 +150,67 @@ if __name__=='__main__':
     #                 print(cmd)
     #                 # os.system(cmd)
 
-    # Save the shot list to databases
-    shot_list=[]
-    with open('./shot_list_4_15.csv', 'r') as csvfile:
-        rows = csv.reader(csvfile)
-        for row in rows:
-            row_s = row[0].split('/')
-            # row_path = os.path.join("storage_server_volume/SmartPole/Pole1/", os.path.join(*row_s[-2:]))
-            vid_date = row_s[-2]
-            vid_name = row_s[-1]
-            shot_list.append((vid_date, vid_name, row[1]))
+    # # Init the shot list to databases
+    # shot_list=[]
+    # with open('./shot_list_4_29.csv', 'r') as csvfile:
+    #     rows = csv.reader(csvfile)
+    #     for row_s in rows:
+    #         vid_date = row_s[-2]
+    #         vid_name = row_s[0]
+    #         vid_shot_list = row_s[1]
+    #         shot_list.append((vid_date, vid_name, vid_shot_list))
+            
 
+    # sorted_shot_list = sorted(shot_list, key= lambda x: x[1])
+    # for s in sorted_shot_list:
+    #     json_body = [
+    #                 {
+    #                     "measurement": "shot_list",
+    #                     "tags": {
+    #                         "base_path": data['global']['base_path'],
+    #                         "storage_path": data['global']['storage_path'],
+    #                         "date": str(s[0]),
+    #                         "name": str(s[1])
+    #                     },
+    #                     "fields": {
+    #                         "list": str(s[2])
+    #                     }
+    #                 }
+    #             ]
+    #     DBclient.write_points(json_body)
 
-    sorted_shot_list = sorted(shot_list, key= lambda x: x[0])
-    for s in sorted_shot_list:
-        json_body = [
-                    {
-                        "measurement": "shot_list",
-                        "tags": {
-                            "base_path": data['global']['base_path'],
-                            "storage_path": data['global']['storage_path'],
-                            "date": str(s[0]),
-                            "name": str(s[1])
-                        },
-                        "fields": {
-                            "list": str(s[2])
-                        }
-                    }
-                ]
-        DBclient.write_points(json_body)
+    # Init the shot list to databases
+    # vis_entropy_list = []
+    # with open('./visual_features_entropy_unnormalized_4_15.csv', 'r') as csvfile:
+    #     rows = csv.reader(csvfile)
+    #     next(rows)
+    #     for r in rows:
+    #         name = r[0].split("/")[-1]
+    #         color = float(r[1]); edge = float(r[2])
+    #         conv = float(r[3]);  temp = float(r[4])
+    #         vis_entropy_list.append((name, color, edge, conv, temp))
+            
+
+    # sorted_vis_entropy_list = sorted(vis_entropy_list, key= lambda x: x[0])
+    # for s in sorted_vis_entropy_list:
+    #     json_body = [
+    #                 {
+    #                     "measurement": "visual_features_entropy_unnormalized_arena",
+    #                     "tags": {
+    #                         "name": s[0],
+    #                         "base_path": data['global']['base_path'],
+    #                         "storage_path": data['global']['storage_path']
+    #                     },
+    #                     "fields": {
+    #                         "color": s[1],
+    #                         "edge": s[2],
+    #                         "conv": s[3],
+    #                         "temp": s[4]
+    #                     }
+    #                 }
+    #             ]
+    #     DBclient.write_points(json_body, time_precision='ms')
+
 
     ## Pressure test...
     # json_body = []

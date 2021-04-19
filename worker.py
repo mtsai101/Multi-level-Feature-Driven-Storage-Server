@@ -275,12 +275,11 @@ if __name__=='__main__':
     table_name = "visual_features_entropy_unnormalized"
     result = list(DBclient.query("SELECT * FROM "+table_name))[0]
     json_body = []
-    with open('visual_features_entropy_unnormalized_4_15.csv','a') as f:
+    with open('visual_features_entropy_unnormalized_4_29.csv','a') as f:
             writer = csv.writer(f)
             writer.writerow(['name', 'color', 'edge', 'conv', 'temp'])
     for r in result:
-        with open('visual_features_entropy_unnormalized_4_15.csv','a') as f:
+        with open('visual_features_entropy_unnormalized_4_29.csv','a') as f:
             writer = csv.writer(f)
-            name = "/".join(r['name'].split('/')[1:])
-            writer.writerow([name,  r['color'], r['edge'], r['conv'], r['temp']])
+            writer.writerow([r['name'],  r['color'], r['edge'], r['conv'], r['temp']])
 

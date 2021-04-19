@@ -45,54 +45,61 @@ def feature_procs(pending_tuple):
     print("[INFO] Extracting :", pending_tuple[0])
 
     try:
-        vid_name = pending_tuple[0].split('/')[-1]
-        result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+vid_name+"\'")
-
-        shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
-
         color_entropy = mp.Value('d', 0.0); edge_entropy = mp.Value('d', 0.0); 
         conv_entropy = mp.Value('d', 0.0); temp_entropy = mp.Value('d', 0.0)
+        
+        ### read shot list from database
+        vid_name = pending_tuple[0].split('/')[-1]
+        result = DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+vid_name+"\'")
+        shot_list = list(result.get_points(measurement='shot_list'))
 
-        color_proc = mp.Process(target=get_color_entropy, args=(pending_tuple[1], shot_list, color_entropy,))
-        edge_proc = mp.Process(target=get_edge_entropy, args=(pending_tuple[1], shot_list, edge_entropy,))
-        conv_proc = mp.Process(target=get_conv_entropy, args=(pending_tuple[1], shot_list, conv_entropy,))
-        temp_proc = mp.Process(target=get_temp_conv_entropy, args=(pending_tuple[1], shot_list, temp_entropy,))
-        color_proc.start(); 
-        edge_proc.start(); 
-        conv_proc.start(); 
-        temp_proc.start()
+        if len(shot_list)>0:
+            shot_list = ast.literal_eval(shot_list[0]['list'])
 
-        color_proc.join(); 
-        edge_proc.join(); 
-        conv_proc.join(); 
-        temp_proc.join()
+
+            color_proc = mp.Process(target=get_color_entropy, args=(pending_tuple[1], shot_list, color_entropy,))
+            edge_proc = mp.Process(target=get_edge_entropy, args=(pending_tuple[1], shot_list, edge_entropy,))
+            conv_proc = mp.Process(target=get_conv_entropy, args=(pending_tuple[1], shot_list, conv_entropy,))
+            temp_proc = mp.Process(target=get_temp_conv_entropy, args=(pending_tuple[1], shot_list, temp_entropy,))
+            color_proc.start(); 
+            edge_proc.start(); 
+            conv_proc.start(); 
+            temp_proc.start()
+
+            color_proc.join(); 
+            edge_proc.join(); 
+            conv_proc.join(); 
+            temp_proc.join()
 
 
         print("color: %f, edge: %f, conv: %f, temp: %f"%(color_entropy.value, edge_entropy.value, conv_entropy.value, temp_entropy.value))
         json_body = [
-                    {
-                        "measurement": "visual_features_entropy_unnormalized",
-                        "tags": {
-                            "name": str(vid_name)
-                        },
-                        "fields": {
-                            "color": float(color_entropy.value),
-                            "edge": float(edge_entropy.value),
-                            "conv": float(conv_entropy.value),
-                            "temp": float(temp_entropy.value)
-                        }
-                    }
-                ]
-        DBclient.write_points(json_body)
-        
+            {
+                "measurement": "visual_features_entropy_unnormalized",
+                "tags": {
+                    "base_path": data['global']['base_path'],
+                    "storage_path": data['global']['storage_path'],
+                    "name": str(vid_name)
+                },
+                "fields": {
+                    "color": float(color_entropy.value),
+                    "edge": float(edge_entropy.value),
+                    "conv": float(conv_entropy.value),
+                    "temp": float(temp_entropy.value)
+                }
+            }
+        ]
+        DBclient.write_points(json_body, time_precision='ms')
+
+        if len(shot_list)>0:
+            color_proc.close() 
+            edge_proc.close() 
+            conv_proc.close()
+            temp_proc.close()
+
     except Exception as e:
         print(e)
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    finally:
-        color_proc.close() 
-        edge_proc.close() 
-        conv_proc.close()
-        temp_proc.close()
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")        
 
 
 
@@ -101,7 +108,7 @@ if __name__=="__main__":
 
     feature_pending_list = [] # (input_path, back_path)
     month = 11
-    for day in range(21, 24):
+    for day in range(27, 30):
         if month<=0:
             month = "0" + str(month)
         if day<=9:
@@ -119,7 +126,6 @@ if __name__=="__main__":
             if not os.path.isdir(os.path.join(input_dir,"background")):
                 os.mkdir(os.path.join(input_dir,"background"))
 
-
             back_path = os.path.join(output_dir,"background_"+v)
             
             feature_pending_list.append((input_path, back_path)) 
@@ -130,10 +136,10 @@ if __name__=="__main__":
     # print("Background Subtraction Completed")
 
 
-    # print("total %d videos"%(len(feature_pending_list)))
     # with Pool(12) as p:
     #     p.map(launch_shot_detector, feature_pending_list)
     #     print("Shot Detection Completed")
+
     for pending_tuple in feature_pending_list:
         feature_procs(pending_tuple)
 

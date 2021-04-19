@@ -69,7 +69,6 @@ def get_temp_conv_entropy(input_file, shot_list, return_value):
         frame_count += 1
         
     return_value.value = total_entropy
-    print("conv done: %.4f "%(time.time()-stime), input_file)
 
 # if __name__=="__main__":
 #     DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'storage')

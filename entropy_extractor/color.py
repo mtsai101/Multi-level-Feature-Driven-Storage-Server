@@ -31,7 +31,6 @@ def get_color_entropy(input_path, shot_list, return_value):
         
 
     return_value.value = total_entropy
-    print("color done: %.4f "%(time.time()-stime), input_file)
 
 
 

@@ -1,13 +1,23 @@
 from entropy import conv_entropy
 import numpy as np
 import tensorflow as tf
-physical_devices = tf.config.list_physical_devices('GPU')
-tf.config.set_visible_devices(physical_devices[1], 'GPU')
-tf.config.experimental.set_memory_growth(physical_devices[1], True)
+import subprocess as sp
+import os
 
-# tf.config.experimental.set_virtual_device_configuration(physical_devices[0], [
-#   tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)
-# ])
+def get_gpu_with_most_memory():
+    _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
+
+    ACCEPTABLE_AVAILABLE_MEMORY = 1024
+    COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
+    memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
+    memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
+    
+    return np.argmax(memory_free_values)
+
+use_gpu_id = get_gpu_with_most_memory()
+physical_devices = tf.config.list_physical_devices('GPU')
+tf.config.set_visible_devices(physical_devices[use_gpu_id], 'GPU')
+tf.config.experimental.set_memory_growth(physical_devices[use_gpu_id], True)
 
 class SimpleConv(tf.keras.Model):
   def __init__(self):
