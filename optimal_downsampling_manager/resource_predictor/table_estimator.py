@@ -330,7 +330,7 @@ class IATable(Table):
 
 
 def get_context(clip_name):
-    video_name_list = clip_name.split('/')[-1].split('_')    
+    video_name_list = clip_name.split('/')[-1].split('_')
     day_idx = datetime.datetime.strptime(video_name_list[-2], '%Y-%m-%d')
     day_idx = int(day_idx.weekday() >= 5) # day_idx==0 if weekday else day_idx==1
     time_idx = int(int(video_name_list[-1].split('-')[0]))

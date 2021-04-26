@@ -85,9 +85,9 @@ class Analyst(object):
         self.read_fps = self.vs.get(cv2.CAP_PROP_FPS)
 
         self.total_frame_num = self.vs.get(cv2.CAP_PROP_FRAME_COUNT)
+        print(self.total_frame_num, "frames need to be processed...")
         self.img_width = int(self.vs.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.img_height = int(self.vs.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(self.total_frame_num)
         self.shot_list =  self.get_shot_list(L_decision)
         self.processing_fps = 0.0
         self.writer = None
@@ -99,23 +99,23 @@ class Analyst(object):
             If the sampling_frame_ratio is 1, it will not affect to shot_list
             If the sampling_frame_ratio < 1, shot_list will be sampled
         """
-        unsample_video_path = os.path.join(data['storage_path'], L_decision.clip_name)
+        unsample_video_path = os.path.join(data['global']['storage_path'], L_decision.clip_name)
 
         if L_decision.fps==24 and L_decision.bitrate==1000: ## used on SLE 
             video_path = unsample_video_path
             sampling_frame_ratio = 1
         else: # used on DDM
             video_path = os.path.join(
-                data['converted_storage_path'], L_decision['fps'], L_decision['bitrate'], L_decision.clip_name
+                data['global']['converted_storage_path'], L_decision['fps'], L_decision['bitrate'], L_decision.clip_name
             )
             cap = cv2.VideoCapture(unsample_video_path); origin_video_frame_num = cap.get(cv2.CAP_PROP_FRAME_COUNT); 
             cap.release()
             sampling_frame_ratio = self.total_frame_num/origin_video_frame_num 
 
-        result = self.DBclient.query("SELECT * FROM shot_list where \"name\"=\'" + video_path+ "\'")
+
+        result = self.DBclient.query("SELECT * FROM shot_list where \"name\"=\'" + L_decision.clip_name+ "\'")
         shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
-        print(video_path)
-        
+     
         return [[x[0],int(x[1]*sampling_frame_ratio)] for x in shot_list]
 
 

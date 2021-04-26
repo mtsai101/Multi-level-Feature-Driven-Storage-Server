@@ -23,30 +23,29 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
 def generate_L(L_type='',clip_list=[]):
 
     # weight assignment of video could be written here
-    clip_array = np.zeros((len(clip_list),2),dtype=np.uint8)
-    for id_r, r in enumerate(clip_list):
-        clip_array[id_r][0], clip_array[id_r][1] = get_context(r['name'])
+    # clip_array = np.zeros((len(clip_list),2),dtype=np.uint8)
+    # for id_r, r in enumerate(clip_list):
+    #     clip_array[id_r][0], clip_array[id_r][1] = get_context(r['name'])
 
-    target_clip_num = clip_array.shape[0]
+    # target_clip_num = clip_array.shape[0]
 
 
     print("Start to generating L...")
     try:
         if L_type=="EXP":
-             """
-                Write in EXP for experimental usage
-            """ 
-            L_list=list()
-            for clip in clip_list:
+            """
+                Experimental usage
+            """
 
+            L_list = list()
+
+            for clip in clip_list:
                 decision = Decision(clip_name=clip['name'],
-                            a_type=clip['a_type'], 
+                            a_type = clip['a_type'], 
                             a_parameter=int(clip['a_parameter']),
                             fps= int(clip['fps']), 
                             bitrate=int(clip['bitrate']))
-
                 L_list.append(decision)
-                
             return L_list
 
         elif L_type=='optimal':

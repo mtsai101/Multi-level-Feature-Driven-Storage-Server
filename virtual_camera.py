@@ -141,7 +141,6 @@ class WorkloadGen():
                 result = self.DBclient.query("select * from " + table_name)
                 result_list.extend(list(result.get_points(measurement=table_name)))
 
-            print(len(result_list))
             for r in result_list:
                 info_v = r['name'].split("_")
                 date = info_v[-2].split("-")

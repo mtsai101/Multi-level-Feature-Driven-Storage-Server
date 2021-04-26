@@ -102,9 +102,10 @@ class SamplingLengthEstimator(object):
 
             print("Keep listening for the next batch of clips from VC")
             
-    def process_pending(self,clip_list):
+    def process_pending(self, clip_list):
 
         L_list = generate_L(L_type=data['SLE']['algo'], clip_list=clip_list)
+        
         print("L list length: ",len(L_list))
         print("[INFO] sending L_decision")
         
