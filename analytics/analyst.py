@@ -79,8 +79,9 @@ class Analyst(object):
             self.writer.release()
 
         print("[INFO] opening video file...")
-
-        self.vs = cv2.VideoCapture(L_decision.clip_name)
+        video_path = os.path.join(L_decision.storage_dir, L_decision.clip_name)
+        print(video_path)
+        self.vs = cv2.VideoCapture(video_path)
 
         self.read_fps = self.vs.get(cv2.CAP_PROP_FPS)
 
@@ -102,12 +103,8 @@ class Analyst(object):
         unsample_video_path = os.path.join(data['global']['storage_path'], L_decision.clip_name)
 
         if L_decision.fps==24 and L_decision.bitrate==1000: ## used on SLE 
-            video_path = unsample_video_path
             sampling_frame_ratio = 1
         else: # used on DDM
-            video_path = os.path.join(
-                data['global']['converted_storage_path'], L_decision['fps'], L_decision['bitrate'], L_decision.clip_name
-            )
             cap = cv2.VideoCapture(unsample_video_path); origin_video_frame_num = cap.get(cv2.CAP_PROP_FRAME_COUNT); 
             cap.release()
             sampling_frame_ratio = self.total_frame_num/origin_video_frame_num 
@@ -146,7 +143,7 @@ class Analyst(object):
                     }
                 }
             ]
-            # self.DBclient.write_points(json_body)
+            self.DBclient.write_points(json_body)
         
         print("total processed {} frames".format(self.framesCounter))
         print("[INFO] Refresh the analtic type")
@@ -178,7 +175,7 @@ class Analyst(object):
                     }
                 }
             )
-        # self.DBclient.write_points(json_body, database=data['global']['database_name'], time_precision='ms', batch_size=80000, protocol='json')
+        self.DBclient.write_points(json_body, database=data['global']['database_name'], time_precision='ms', batch_size=80000, protocol='json')
 
         print("[INFO] Record each frame results in the shot, take %.2f second"%(time.time()-s))
         

@@ -37,14 +37,22 @@ def generate_L(L_type='',clip_list=[]):
                 Experimental usage
             """
 
-            L_list = list()
 
+            L_list = list()
             for clip in clip_list:
+
+                if int(clip['fps']) == 24 and int(clip['bitrate'])==1000:
+                    storage_dir = data['global']['storage_path']
+                else:
+                    storage_ = os.path.join(
+                        data['global']['converted_storage_path'], "_".join([clip['fps'],clip['bitrate']])
+                    )
                 decision = Decision(clip_name=clip['name'],
                             a_type = clip['a_type'], 
                             a_parameter=int(clip['a_parameter']),
                             fps= int(clip['fps']), 
-                            bitrate=int(clip['bitrate']))
+                            bitrate=int(clip['bitrate']),
+                            storage_dir=storage_dir)
                 L_list.append(decision)
             return L_list
 
