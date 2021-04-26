@@ -13,35 +13,38 @@ DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global'
 if __name__=='__main__':
     
     # init raw video database
-    # for i in range(10,16):
-    #     db_name = "raw_11_"+str(i)
-    #     if i<10:
-    #         i_ = "0"+str(i)
-    #     else:
-    #         i_=str(i)
+    for i in range(4,30):
+        table_name = "raw_11_"+str(i)
+        if i<10:
+            i_ = "0"+str(i)
+        else:
+            i_=str(i)
 
-    #     base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+i_+"_00-00-00"
-    #     video_li = os.listdir(base_dir)
-    #     video_li = sorted(video_li, key= lambda x: x)
-    #     for v in video_li:
-    #         v_path = os.path.join(base_dir,v)
+        base_dir = "./storage_server_volume/SmartPole/Pole1/2020-11-"+i_+"_00-00-00"
+        video_li = os.listdir(base_dir)
+        video_li = sorted(video_li, key= lambda x: x)
+        for v in video_li:
+            v_path = os.path.join(base_dir,v)
             
-    #         if os.path.isdir(v_path):
-    #             continue
-    #         json_body = [
-    #                             {
-    #                                 "measurement": db_name,
-    #                                 "tags": {
-    #                                     "name": str(v_path)
-                                        
-    #                                 },
-    #                                 "fields": {
-    #                                     "host": "webcamPole1"
-    #                                 }
-    #                             }
-    #                         ]
-            
-    #         DBclient.write_points(json_body)
+            if os.path.isdir(v_path):
+                continue
+
+            date = base_dir.split("/")[-1]
+            json_body = [
+                    {
+                        "measurement": table_name,
+                        "tags": {
+                            "host": "Pole1",
+                            "fps": int(24),
+                            "bitrate": int(1000)
+                        },
+                        "fields": {
+                            "name": v,
+                            "date": date
+                        }
+                    }
+                ]
+            DBclient.write_points(json_body,time_precision='ms')
 
     # init sample video database
 
@@ -298,3 +301,30 @@ if __name__=='__main__':
     #             ]
         
     #     DBclient.write_points(json_body,time_precision='ms')
+
+
+    # for i in range(4,30):
+    #     table_name = "raw_11_"+str(i)
+        # result = DBclient.query("SELECT * FROM " + table_name)
+        # result_list = list(result.get_points(measurement=table_name))
+        # _ = DBclient.query("DROP MEASUREMENT " + table_name)
+
+    #     for r in result_list:
+    #         name = r['name'].split("/")[-1]
+    #         date = r['name'].split("/")[-2]
+    #         json_body = [
+    #                 {
+    #                     "measurement": table_name,
+    #                     "tags": {
+    #                         "fps": int(r['fps']),
+    #                         "bitrate":int(r['bitrate']),
+    #                         "host": "Pole1"
+    #                     },
+    #                     "fields": {
+    #                         "name": name,
+    #                         "date": date
+    #                     }
+    #                 }
+    #             ]
+    #         DBclient.write_points(json_body,time_precision='ms')
+

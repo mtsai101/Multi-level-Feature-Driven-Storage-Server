@@ -20,27 +20,34 @@ global:
   database_name: 'merge_storage'
   base_path: '/home/min/Multi-level-Feature-Driven-Storage-Server'
   storage_path: 'storage_server_volume/SmartPole/Pole1'
-  # camera2SLE: 5000
-  # SLE2AP: 7000
-  # SLE2camera: 6000
+  converted_storage_path: 'storage_server_volume/converted'
 
-  # agent2DDM: 5001
-  # DDM2DP: 7001
-  # DP2agent: 6001
+  camera2SLE: 5000
+  SLE2AP: 7000
+  SLE2camera: 6000
+
+  agent2DDM: 5001
+  DDM2DP: 7001
+  DP2agent: 6001
 
 dispatcher:
   SLE_trigger_time: 6 # hour 
 
+
 SLE:
-  algo: FIFO # use which algo to in SLE to decide the sample length
-  delta_i: 300
+  algo: EXP # use which algo to in SLE to decide the sample length, EX
+  # delta_i: 300
 
 DDM:
   algo: None
 
-# analytics:
+EXP:
+  PHASE: SLE # experiments for SLE
+  S_MONTH: 11
+  E_MONTH: 11
+  S_DAY: 16
+  E_DAY: 17 
 
-# downsampling_manager:
 
 db_agent:
   DDM_threshold: 5120

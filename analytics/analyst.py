@@ -28,9 +28,13 @@ with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
 class Analyst(object):
+    """
+    shot_list_index: which shot is using
+    framesCounter: frame id of the original video
+    """
     def __init__(self):
         self.current_sample_rate = 0
-        self.framesCounter = 0
+        self.framesCounter = 0 
         self.netMain = None 
         self.metaMain = None
         self.altNames = None
@@ -43,7 +47,7 @@ class Analyst(object):
         self.write2disk = False
         self.writer = None
         self.clip_name = None
-        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['database_port'], database=data['global']['database_name'], username='root', password='root')
 
         self.shot_list = None
         self.shot_list_index = 0
@@ -90,19 +94,28 @@ class Analyst(object):
 
     # find the shot start and end position in the sampled quality video
     def get_shot_list(self, L_decision):
-        if L_decision.fps==24 and L_decision.bitrate==1000:
-            unsample_video_path = L_decision.clip_name
+        """
+            The downsample videos are with less total frame, we tims the ratio to calculate the downsampled shot_list
+            If the sampling_frame_ratio is 1, it will not affect to shot_list
+            If the sampling_frame_ratio < 1, shot_list will be sampled
+        """
+        unsample_video_path = os.path.join(data['storage_path'], L_decision.clip_name)
+
+        if L_decision.fps==24 and L_decision.bitrate==1000: ## used on SLE 
+            video_path = unsample_video_path
             sampling_frame_ratio = 1
-        else:
-            sample_video_path_parse = L_decision.clip_name.split('/')
-            unsample_video_path = os.path.join('./storage_server_volume/SmartPole/Pole1', sample_video_path_parse[-2], sample_video_path_parse[-1])
+        else: # used on DDM
+            video_path = os.path.join(
+                data['converted_storage_path'], L_decision['fps'], L_decision['bitrate'], L_decision.clip_name
+            )
             cap = cv2.VideoCapture(unsample_video_path); origin_video_frame_num = cap.get(cv2.CAP_PROP_FRAME_COUNT); 
             cap.release()
-            sampling_frame_ratio = self.total_frame_num/origin_video_frame_num
+            sampling_frame_ratio = self.total_frame_num/origin_video_frame_num 
 
-        result = self.DBclient.query("SELECT * FROM shot_list where \"name\"=\'"+unsample_video_path+"\'")
+        result = self.DBclient.query("SELECT * FROM shot_list where \"name\"=\'" + video_path+ "\'")
         shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
- 
+        print(video_path)
+        
         return [[x[0],int(x[1]*sampling_frame_ratio)] for x in shot_list]
 
 
@@ -116,7 +129,7 @@ class Analyst(object):
             #save info_amount by type
             json_body = [
                 {
-                    "measurement": "analy_complete_sample_quality_result_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
+                    "measurement": "analy_complete_result_inshot_"+str(L_decision.month)+"_"+str(L_decision.day),
                     "tags": {
                         "a_type": str(L_decision.a_type),
                         "day_of_week":int(L_decision.day_idx),
@@ -133,7 +146,7 @@ class Analyst(object):
                     }
                 }
             ]
-            self.DBclient.write_points(json_body)
+            # self.DBclient.write_points(json_body)
         
         print("total processed {} frames".format(self.framesCounter))
         print("[INFO] Refresh the analtic type")
@@ -165,7 +178,7 @@ class Analyst(object):
                     }
                 }
             )
-        self.DBclient.write_points(json_body, database=data['global']['database_name'], time_precision='ms', batch_size=80000, protocol='json')
+        # self.DBclient.write_points(json_body, database=data['global']['database_name'], time_precision='ms', batch_size=80000, protocol='json')
 
         print("[INFO] Record each frame results in the shot, take %.2f second"%(time.time()-s))
         
@@ -206,11 +219,11 @@ class Analyst(object):
             if self.shot_list_index >= len(self.shot_list):
                 break
             
-            if not self.shot_list[self.shot_list_index][0]:
+            if not self.shot_list[self.shot_list_index][0]: # shots are not important, pass it
                 self.framesCounter+=1
                 continue
 
-            sample_buf -= 1
+            sample_buf -= 1 # when sample_buf == 0, analyze this frame
             if sample_buf>0:
                 self.framesCounter += 1
                 continue

@@ -23,7 +23,7 @@ class SamplingLengthEstimator(object):
         self.conn_send2Analytic = None
         self.ready = threading.Event()
     
-        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['database_port'], database=data['global']['database_name'], username='root', password='root')
 
         self.VClistener = Listener(('localhost',int(data['global']['camera2SLE'])))
     
@@ -93,7 +93,7 @@ class SamplingLengthEstimator(object):
         while True:
             pending_video_ready = self.conn_listenVirtualCamera.recv()
             print("Generating L from workload generator")
-            result = self.DBclient.query('SELECT * from pending_video')
+            result = self.DBclient.query('SELECT * from pending_video') # in the future, we hope to record the status of pending videos
             clip_list = list(result.get_points(measurement='pending_video'))
             if len(clip_list) > 0:
                 self.process_pending(clip_list)
@@ -103,9 +103,8 @@ class SamplingLengthEstimator(object):
             print("Keep listening for the next batch of clips from VC")
             
     def process_pending(self,clip_list):
-        process_num = 1 # needs to less than total number of CPU cores
 
-        L_list = generate_L(L_type=data['SLE']['algo'], clip_list=clip_list, process_num=process_num)
+        L_list = generate_L(L_type=data['SLE']['algo'], clip_list=clip_list)
         print("L list length: ",len(L_list))
         print("[INFO] sending L_decision")
         

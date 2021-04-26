@@ -272,14 +272,13 @@ if __name__=='__main__':
     # backup measurement to csv
     # import csv
     # DBclient = InfluxDBClient('localhost', 8086, 'root', 'root', 'merge_storage')
-    table_name = "visual_features_entropy_unnormalized"
-    result = list(DBclient.query("SELECT * FROM "+table_name))[0]
-    json_body = []
-    with open('visual_features_entropy_unnormalized_4_29.csv','a') as f:
-            writer = csv.writer(f)
-            writer.writerow(['name', 'color', 'edge', 'conv', 'temp'])
-    for r in result:
-        with open('visual_features_entropy_unnormalized_4_29.csv','a') as f:
-            writer = csv.writer(f)
-            writer.writerow([r['name'],  r['color'], r['edge'], r['conv'], r['temp']])
-
+    # table_name = "visual_features_entropy_unnormalized"
+    # result = list(DBclient.query("SELECT * FROM "+table_name))[0]
+    # json_body = []
+    # with open('visual_features_entropy_unnormalized_4_29.csv','a') as f:
+    #         writer = csv.writer(f)
+    #         writer.writerow(['name', 'color', 'edge', 'conv', 'temp'])
+    # for r in result:
+    #     with open('visual_features_entropy_unnormalized_4_29.csv','a') as f:
+    #         writer = csv.writer(f)
+    #         writer.writerow([r['name'],  r['color'], r['edge'], r['conv'], r['temp']])

@@ -92,9 +92,6 @@ class Analytic_Platform():
         self.listener.close()
 
 
-
-
-
     def init_metadata(self):
 
         if not os.path.exists(configPath):
@@ -177,14 +174,6 @@ class Analytic_Platform():
 
         print("[INFO] Analyzing end up...")
         print("[INFO] Updating the prediction model now...")
-        # update the prediction table
-        # updateIA = threading.Thread(target=IATable,args=(True,))
-        # updateIA.start()
-        # updateAnalyTime = threading.Thread(target=AnalyTimeTable,args=(True,))
-        # updateAnalyTime.start()
-
-        # updateIA.join()
-        # updateAnalyTime.join()
 
 
 

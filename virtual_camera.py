@@ -14,32 +14,29 @@ import yaml
 import sys
 
 trigger_interval = datetime.timedelta(hours=6) # hours
-f_c = 24*60
-# pre_a_selected=[5.0, 10.0, 25.0, 50.0, 100.0]
 
-# ANALY_LIST = ["people_counting","illegal_parking0"]
-ANALY_LIST = ["illegal_parking1","car_counting"]
+# four kinds of analytics
+ANALY_LIST = ["people_counting","illegal_parking0"]
+# ANALY_LIST = ["illegal_parking1","car_counting"]
 
 with open('configuration_manager/config.yaml','r') as yamlfile:
     data = yaml.load(yamlfile,Loader=yaml.FullLoader)
 
-# iATable = IATable(False)
 class WorkloadGen():
     def __init__(self):
         self.pending_list = list()
-        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['port'], database=data['global']['database_name'], username='root', password='root')
+        self.DBclient = InfluxDBClient(host=data['global']['database_ip'], port=data['global']['database_port'], database=data['global']['database_name'], username='root', password='root')
 
         # the current time 
         self.cur_clock = datetime.datetime(year = 2020, month = 11, day = 30, hour = 15)   
         #the last updated time
         self.last_updated_clocks = datetime.datetime(year = 2020, month = 11, day = 3, hour = 18)
+        self.month = data['EXP']['S_MONTH']
+        self.start_day = data['EXP']['S_DAY']
+        self.end_day = data['EXP']['E_DAY']
 
-        self.end_day = 9
-
-        self.cur_day = 9
-        self.cur_hour = 0
-        self.algo_type = 'FIFO' # FIFO,EF,EFR,Greedy
-
+        # self.cur_day = 9
+        # self.cur_hour = 0
 
         self.conn_send2SLE = None
         self.conn_listen2AP = None
@@ -118,8 +115,8 @@ class WorkloadGen():
         try:
             self.lock.acquire()
             print("Generate new pending list...")
-            result_list = []
-            i = copy.copy(self.last_updated_clocks)
+
+            # i = copy.copy(self.last_updated_clocks)
             
             ## if we need time-series
             # while i <= self.cur_clock:
@@ -128,35 +125,25 @@ class WorkloadGen():
                 # result_list += list(result.get_points(measurement="raw_"+ str(i.month) +"_"+str(i.day)))
                 # i += trigger_interval
             ## if we just want to specify some videos    
-<<<<<<< HEAD
 
-            
-<<<<<<< HEAD
-            table_name = 'sample_11_12'
-=======
-            table_name = 'sample_11_9'
->>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
-            result = self.DBclient.query("select * from "+table_name)
-            result_list = list(result.get_points(measurement=table_name))
-
-
-<<<<<<< HEAD
-            for r in result_list[66:]:
-=======
-            for r in result_list[100:]:
->>>>>>> a055e3e08a5fe83d58d43789c39fc9ec2cb4b194
-=======
+            # table_name = 'sample_11_12'
+            # result = self.DBclient.query("select * from "+table_name)
+            # result_list = list(result.get_points(measurement=table_name))
+            if data['EXP']['PHASE'] == "SLE":
+                table_prefix = "raw"
+            elif data['EXP']['PHASE'] == "DDM":
+                table_prefix = "sample"
+                
+                
             result_list = []
-            for i in range(12,13):
-                table_name = 'sample_11_'+str(i)
-                result = self.DBclient.query("select * from "+table_name)
+            for i in range(self.start_day, self.end_day):
+                table_name = "_".join([table_prefix, str(self.month), str(i)])
+                result = self.DBclient.query("select * from " + table_name)
                 result_list.extend(list(result.get_points(measurement=table_name)))
 
-
+            print(len(result_list))
             for r in result_list:
->>>>>>> d90c714b19d5bf9facea3454965b109d5a73aac7
-                v = r['name'].split("/")[-1]
-                info_v = v.split("_")
+                info_v = r['name'].split("_")
                 date = info_v[-2].split("-")
                 year = int(date[0])
                 month = int(date[1])
@@ -171,8 +158,6 @@ class WorkloadGen():
                             "tags": {
                                 "name":r['name'],
                                 "a_type":ANALY_LIST[0],
-                                "prev_fps":int(24),
-                                "prev_bitrate":int(1000),
                                 "fps":int(r['fps']),
                                 "bitrate":int(r['bitrate']),
                                 "a_parameter":int(1)
