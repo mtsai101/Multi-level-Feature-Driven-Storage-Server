@@ -1,5 +1,6 @@
 from influxdb import InfluxDBClient
 from numpy.random import default_rng
+
 import numpy as np
 import pandas as pd
 import datetime
@@ -32,55 +33,46 @@ SEEN_ANALY_LIST = ["illegal_parking0", "people_counting"]
 UNSEEN_ANALY_LIST = ["illegal_parking1", "car_counting"]
 
 if __name__=='__main__':
-    round_ = 1
-    week = "week"
-    for ro in range(round_):
-        print("Generate queries...Round ",ro)
-        if os.path.isfile(f'./experiments/query_ia_error_allalgo_{week}_round{ro}.csv'):
-            os.remove(f'./experiments/query_ia_error_allalgo_{week}_round{ro}.csv')
-            
-        start_day = 9
-        end_day = 15
-        size  = (end_day-start_day+1)
 
+    start_day = 9
+    end_day = 15
+    size  = (end_day-start_day+1)
+    rng = default_rng()
+    full_length_sample_quality_info_df = None
+    full_info_df = None
+
+    for r in range(size):
         query_video_list = []
         chosen_ana_list = []
+        print("Generate queries...Day ",r)
+        if os.path.isfile(f'./experiments/query_ia_dayserror_allalgo_day{r}.csv'):
+            os.remove(f'./experiments/query_ia_dayserror_allalgo_day{r}.csv')
 
-        rng = default_rng()
-        full_length_sample_quality_info_df = None
-        full_info_df = None
-
-        for r in range(size):
-            
-            date = str(r + start_day)
-            result = DBclient.query("SELECT * FROM raw_11_"+str(date))
-            per_day_video_list = list(result.get_points(measurement="raw_11_"+str(date)))
-            video_num_per_day = len(per_day_video_list)
-            poisson_query = np.random.poisson(lam=8/video_num_per_day, size=video_num_per_day) # 8 request / 24 hour 
-            
-            # with open(f'./poisson.csv','a',newline='') as f:
-            #     writer = csv.writer(f)
-            #     writer.writerow([poisson_query, sum(poisson_query)])
+        date = str(r + start_day)
+        result = DBclient.query("SELECT * FROM raw_11_"+str(date))
+        per_day_video_list = list(result.get_points(measurement="raw_11_"+str(date)))
+        video_num_per_day = len(per_day_video_list)
+        poisson_query = np.random.poisson(lam=8/video_num_per_day, size=video_num_per_day) # 8 request / 24 hour 
 
 
-            for idx_q, num_q in enumerate(poisson_query):
-                if num_q == 0:
-                    continue
-                chosen_ana_list.append(rng.choice(len(SEEN_ANALY_LIST), num_q ,replace=True))
-                query_video_list.append(per_day_video_list[idx_q])
+        for idx_q, num_q in enumerate(poisson_query):
+            if num_q == 0:
+                continue
+            chosen_ana_list.append(rng.choice(len(SEEN_ANALY_LIST), num_q ,replace=True))
+            query_video_list.append(per_day_video_list[idx_q])
 
-            result = DBclient.query('SELECT * FROM sample_quality_alltarget_inshot_11_'+str(date))
-            full_length_sample_quality_info_df = pd.concat([full_length_sample_quality_info_df, pd.DataFrame(list(result.get_points(measurement='sample_quality_alltarget_inshot_11_'+str(date))))])
-            result = DBclient.query('SELECT * FROM analy_complete_result_inshot_11_'+str(date))
-            full_info_df = pd.concat([full_info_df, pd.DataFrame(list(result.get_points(measurement='analy_complete_result_inshot_11_'+str(date))))])
-
+        result = DBclient.query('SELECT * FROM sample_quality_alltarget_inshot_11_'+str(date))
+        full_length_sample_quality_info_df = pd.concat([full_length_sample_quality_info_df, pd.DataFrame(list(result.get_points(measurement='sample_quality_alltarget_inshot_11_'+str(date))))])
+        result = DBclient.query('SELECT * FROM analy_complete_result_inshot_11_'+str(date))
+        full_info_df = pd.concat([full_info_df, pd.DataFrame(list(result.get_points(measurement='analy_complete_result_inshot_11_'+str(date))))])
+    
         for algo in alog_list:
             result = resultDBclient.query("SELECT * FROM video_in_server_"+algo)
             video_in_server = pd.DataFrame(list(result.get_points(measurement = "video_in_server_"+algo)))
             query_result_ia = []
             for q in query_video_list:
                 # information amount of original video
-                # print("Querying",q['name'],"...")
+                print("Querying",q['name'],"...")
                 origin_video_info = (full_info_df.loc[(full_info_df['name']==q['name']) & (full_info_df['a_type']=='illegal_parking0')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='illegal_parking0')]['value'].iloc[0]) 
                 origin_video_info += (full_info_df.loc[(full_info_df['name']==q['name']) & (full_info_df['a_type']=='people_counting')]['target'].iloc[0] / MaxTargetTable.loc[(MaxTargetTable['a_type']=='people_counting')]['value'].iloc[0]) 
                 origin_video_info += PCATable.loc[PCATable['name']==q['name']].iloc[0]['value']
@@ -119,7 +111,7 @@ if __name__=='__main__':
 
                 query_result_ia.append(info_error)
 
-            with open(f'./experiments/query_ia_error_allalgo_{week}_round{ro}.csv','a',newline='') as f:
+            with open(f'./experiments/query_ia_dayserror_allalgo_day{r}.csv','a',newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow([sum(query_result_ia)/len(query_result_ia), max(query_result_ia)])
 
@@ -128,17 +120,17 @@ if __name__=='__main__':
 
 
 
-                    
-                    
-
-
-
-
                 
-                    
+                
+
+
+
+
             
-
-                    
-
+                
+        
 
                 
+
+
+            

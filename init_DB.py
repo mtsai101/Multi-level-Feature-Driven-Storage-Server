@@ -39,7 +39,7 @@ if __name__=='__main__':
                             "bitrate": int(1000)
                         },
                         "fields": {
-                            "name": v,
+                            "name": v_path,
                             "date": date
                         }
                     }

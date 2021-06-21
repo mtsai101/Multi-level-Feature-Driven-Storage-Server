@@ -36,8 +36,7 @@ if __name__=='__main__':
     #     ]
     #     DBclient.write_points(json_body)
     # DBclient.write_points(json_body, database='storage', time_precision='ms', batch_size=40000, protocol='json')
-    
-    
+
     """
         Measurement shot length
     """

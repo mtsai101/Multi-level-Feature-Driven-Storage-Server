@@ -13,9 +13,11 @@ for a in pre_a_selected:
         pre_a_selected_tuple.append((a,b)) 
 DBclient = InfluxDBClient(data['global']['database_ip'], data['global']['database_port'], 'root', 'root', "exp_storage")
 weekend = ['7','8','14','15']
-algo_list = ["opt","heuristic","approx"]
+# algo_list = ["opt","heuristic","approx"]
+algo_list = ['gt']
+
 for algo in algo_list:
-    ### Hours <--> Information Amount 
+    # ### Hours <--> Information Amount 
     # result = DBclient.query("SELECT * FROM L_"+algo+"_exp_time_profit")
     # result_list = list(result.get_points(measurement = "L_"+algo+"_exp_time_profit"))
 
@@ -48,8 +50,8 @@ for algo in algo_list:
     # weekend_err = np.zeros(4); weekend_avg = np.mean(weekend_ti, axis=1)
 
     # for i in range(4):
-    #     weekday_err[i] = 1.96*(np.std(weekday_ti[i])/weekday_ti.shape[1])
-    #     weekend_err[i] = 1.96*(np.std(weekend_ti[i])/weekend_ti.shape[1])
+    #     weekday_err[i] = 1.96*(np.std(weekday_ti[i])/pow(weekday_ti.shape[1],0.5))
+    #     weekend_err[i] = 1.96*(np.std(weekend_ti[i])/pow(weekend_ti.shape[1],0.5))
 
     # with open("experiments/L_"+algo+"_info_hours_weekday.csv",'w') as csvfile:
     #     writer = csv.writer(csvfile)
@@ -62,50 +64,50 @@ for algo in algo_list:
 
 
 
-    # ### Hours <--> Analytime sum
-    # result = DBclient.query("SELECT * FROM L_"+algo+"_exp_time_profit")
-    # result_list = list(result.get_points(measurement = "L_"+algo+"_exp_time_profit"))
+    ### Hours <--> Analytime sum
+    result = DBclient.query("SELECT * FROM L_"+algo+"_exp_time_profit")
+    result_list = list(result.get_points(measurement = "L_"+algo+"_exp_time_profit"))
 
-    # weekday_ti=[[] for i in range(4)]
-    # weekend_ti=[[] for i in range(4)]
+    weekday_ti=[[] for i in range(4)]
+    weekend_ti=[[] for i in range(4)]
 
-    # for r in result_list:
-    #     if (r['day'] not in weekend): ## weekday
-    #         if r['start']=='0':
-    #             weekday_ti[0].append(r['time_sum'])
-    #         elif r['start']=='6':
-    #             weekday_ti[1].append(r['time_sum'])
-    #         elif r['start']=='12':
-    #             weekday_ti[2].append(r['time_sum'])
-    #         elif r['start']=='18':
-    #             weekday_ti[3].append(r['time_sum'])
-    #     elif (r['day'] in weekend): ## weekend
-    #         if r['start']=='0':
-    #             weekend_ti[0].append(r['time_sum'])
-    #         elif r['start']=='6':
-    #             weekend_ti[1].append(r['time_sum'])
-    #         elif r['start']=='12':
-    #             weekend_ti[2].append(r['time_sum'])
-    #         elif r['start']=='18':
-    #             weekend_ti[3].append(r['time_sum'])
+    for r in result_list:
+        if (r['day'] not in weekend): ## weekday
+            if r['start']=='0':
+                weekday_ti[0].append(r['time_sum'])
+            elif r['start']=='6':
+                weekday_ti[1].append(r['time_sum'])
+            elif r['start']=='12':
+                weekday_ti[2].append(r['time_sum'])
+            elif r['start']=='18':
+                weekday_ti[3].append(r['time_sum'])
+        elif (r['day'] in weekend): ## weekend
+            if r['start']=='0':
+                weekend_ti[0].append(r['time_sum'])
+            elif r['start']=='6':
+                weekend_ti[1].append(r['time_sum'])
+            elif r['start']=='12':
+                weekend_ti[2].append(r['time_sum'])
+            elif r['start']=='18':
+                weekend_ti[3].append(r['time_sum'])
 
-    # weekday_ti = np.array(weekday_ti); weekend_ti = np.array(weekend_ti)
-    # print("weekday_ti",weekday_ti); print("weekend_ti",weekend_ti)
-    # weekday_err = np.zeros(4); weekday_avg = np.mean(weekday_ti, axis=1)
-    # weekend_err = np.zeros(4); weekend_avg = np.mean(weekend_ti, axis=1)
+    weekday_ti = np.array(weekday_ti); weekend_ti = np.array(weekend_ti)
+    print("weekday_ti",weekday_ti); print("weekend_ti",weekend_ti)
+    weekday_err = np.zeros(4); weekday_avg = np.mean(weekday_ti, axis=1)
+    weekend_err = np.zeros(4); weekend_avg = np.mean(weekend_ti, axis=1)
 
-    # for i in range(4):
-    #     weekday_err[i] = 1.96*(np.std(weekday_ti[i])/weekday_ti.shape[1])
-    #     weekend_err[i] = 1.96*(np.std(weekend_ti[i])/weekend_ti.shape[1])
+    for i in range(4):
+        weekday_err[i] = 1.96*(np.std(weekday_ti[i])/pow(weekday_ti.shape[1],0.5))
+        weekend_err[i] = 1.96*(np.std(weekend_ti[i])/pow(weekend_ti.shape[1],0.5))
 
-    # with open("experiments/L_"+algo+"_anatime_hours_weekday.csv",'w') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     for i in range(4):
-    #         writer.writerow([weekday_avg[i],weekday_err[i]])
-    # with open("experiments/L_"+algo+"_anatime_hours_weekend.csv",'w') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     for i in range(4):
-    #         writer.writerow([weekend_avg[i],weekend_err[i]])
+    with open("experiments/L_"+algo+"_anatime_hours_weekday.csv",'w') as csvfile:
+        writer = csv.writer(csvfile)
+        for i in range(4):
+            writer.writerow([weekday_avg[i],weekday_err[i]])
+    with open("experiments/L_"+algo+"_anatime_hours_weekend.csv",'w') as csvfile:
+        writer = csv.writer(csvfile)
+        for i in range(4):
+            writer.writerow([weekend_avg[i],weekend_err[i]])
 
 
     ## Sampling length scatter
@@ -136,47 +138,47 @@ for algo in algo_list:
 
             
     # ### Hours <--> Algorithm running time
-    result = DBclient.query("SELECT * FROM L_"+algo+"_exp_time_profit")
-    result_list = list(result.get_points(measurement = "L_"+algo+"_exp_time_profit"))
+    # result = DBclient.query("SELECT * FROM L_"+algo+"_exp_time_profit")
+    # result_list = list(result.get_points(measurement = "L_"+algo+"_exp_time_profit"))
 
-    weekday_ti=[[] for i in range(4)]
-    weekend_ti=[[] for i in range(4)]
+    # weekday_ti=[[] for i in range(4)]
+    # weekend_ti=[[] for i in range(4)]
 
-    for r in result_list:
-        if (r['day'] not in weekend): ## weekday
-            if r['start']=='0':
-                weekday_ti[0].append(r['execution_time'])
-            elif r['start']=='6':
-                weekday_ti[1].append(r['execution_time'])
-            elif r['start']=='12':
-                weekday_ti[2].append(r['execution_time'])
-            elif r['start']=='18':
-                weekday_ti[3].append(r['execution_time'])
-        elif (r['day'] in weekend): ## weekend
-            if r['start']=='0':
-                weekend_ti[0].append(r['execution_time'])
-            elif r['start']=='6':
-                weekend_ti[1].append(r['execution_time'])
-            elif r['start']=='12':
-                weekend_ti[2].append(r['execution_time'])
-            elif r['start']=='18':
-                weekend_ti[3].append(r['execution_time'])
+    # for r in result_list:
+    #     if (r['day'] not in weekend): ## weekday
+    #         if r['start']=='0':
+    #             weekday_ti[0].append(r['execution_time'])
+    #         elif r['start']=='6':
+    #             weekday_ti[1].append(r['execution_time'])
+    #         elif r['start']=='12':
+    #             weekday_ti[2].append(r['execution_time'])
+    #         elif r['start']=='18':
+    #             weekday_ti[3].append(r['execution_time'])
+    #     elif (r['day'] in weekend): ## weekend
+    #         if r['start']=='0':
+    #             weekend_ti[0].append(r['execution_time'])
+    #         elif r['start']=='6':
+    #             weekend_ti[1].append(r['execution_time'])
+    #         elif r['start']=='12':
+    #             weekend_ti[2].append(r['execution_time'])
+    #         elif r['start']=='18':
+    #             weekend_ti[3].append(r['execution_time'])
 
-    weekday_ti = np.array(weekday_ti); weekend_ti = np.array(weekend_ti)
-    weekday_ti = np.log10(weekday_ti); weekend_ti = np.log10(weekend_ti)
-    weekday_err = np.zeros(4); weekday_avg = np.mean(weekday_ti, axis=1)
-    weekend_err = np.zeros(4); weekend_avg = np.mean(weekend_ti, axis=1)
-    print("weekday_ti",weekday_ti); print("weekend_ti",weekend_ti)
+    # weekday_ti = np.array(weekday_ti); weekend_ti = np.array(weekend_ti)
+    # # weekday_ti = np.log10(weekday_ti); weekend_ti = np.log10(weekend_ti)
+    # weekday_err = np.zeros(4); weekday_avg = np.mean(weekday_ti, axis=1)
+    # weekend_err = np.zeros(4); weekend_avg = np.mean(weekend_ti, axis=1)
+    # print("weekday_ti",weekday_ti); print("weekend_ti",weekend_ti)
 
-    for i in range(4):
-        weekday_err[i] = 1.96*(np.std(weekday_ti[i])/weekday_ti.shape[1])
-        weekend_err[i] = 1.96*(np.std(weekend_ti[i])/weekend_ti.shape[1])
+    # for i in range(4):
+    #     weekday_err[i] = 1.96*(np.std(weekday_ti[i])/pow(weekday_ti.shape[1], 0.5))
+    #     weekend_err[i] = 1.96*(np.std(weekend_ti[i])/pow(weekend_ti.shape[1], 0.5))
 
-    with open("experiments/L_"+algo+"_algo_running_time_weekday.csv",'w') as csvfile:
-        writer = csv.writer(csvfile)
-        for i in range(4):
-            writer.writerow([weekday_avg[i],weekday_err[i]])
-    with open("experiments/L_"+algo+"_algo_running_time_weekend.csv",'w') as csvfile:
-        writer = csv.writer(csvfile)
-        for i in range(4):
-            writer.writerow([weekend_avg[i],weekend_err[i]])
+    # with open("experiments/L_"+algo+"_algo_running_time_weekday.csv",'w') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     for i in range(4):
+    #         writer.writerow([weekday_avg[i],weekday_err[i]])
+    # with open("experiments/L_"+algo+"_algo_running_time_weekend.csv",'w') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     for i in range(4):
+    #         writer.writerow([weekend_avg[i],weekend_err[i]])

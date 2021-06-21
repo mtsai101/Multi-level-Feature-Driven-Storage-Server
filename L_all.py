@@ -81,6 +81,27 @@ profit_matrix = None
 pickup_length = None
 clip_number = None
 
+def L_gt(pickup_length):
+        
+    time_sum = 0
+    profit_sum = 0
+    for key, value in enumerate(pickup_length):
+        time_sum += time_matrix[key][value]
+
+    for key, value in enumerate(pickup_length):
+        profit_sum += profit_matrix[key][value]
+
+    print("pickup_length", pickup_length)
+    print("time_sum", time_sum)
+    print("profit_sum", profit_sum)
+
+    pickup_length_transformed = []
+    for i in pickup_length:
+        pickup_length_transformed.append([pre_a_selected_tuple[i][0], pre_a_selected_tuple[i][1]])
+    print("pickup_length_transformed", pickup_length_transformed)
+    return time_sum, profit_sum, pickup_length_transformed
+
+    
 def L_opt(pickup_length):
 
     global time_matrix, profit_matrix, pre_a_selected_tuple, clip_number, delta_i
@@ -354,6 +375,8 @@ if __name__=='__main__':
                 time_sum, profit_sum, pickup_length_transformed = L_opt(pickup_length)
             elif algo=='approx':
                 time_sum, profit_sum, pickup_length_transformed = L_approx(pickup_length)
+            elif algo=='gt':
+                time_sum, profit_sum, pickup_length_transformed = L_gt(pickup_length)
 
             exec_time = time.time() - s
             try:

@@ -111,9 +111,12 @@ class Analyst(object):
 
 
         result = self.DBclient.query("SELECT * FROM shot_list where \"name\"=\'" + L_decision.clip_name+ "\'")
-        shot_list = ast.literal_eval(list(result.get_points(measurement='shot_list'))[0]['list'])
-     
-        return [[x[0],int(x[1]*sampling_frame_ratio)] for x in shot_list]
+        shot_list_str = list(result.get_points(measurement='shot_list'))
+        if shot_list_str:
+            shot_list = ast.literal_eval(shot_list_str[0]['list'])
+            return [[x[0],int(x[1]*sampling_frame_ratio)] for x in shot_list]
+        else:
+            return [[0, self.total_frame_num]]
 
 
 

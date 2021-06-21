@@ -559,8 +559,8 @@ def main(args):
     total_video_ia = 0
     video_list = []
     video_in_server = [] 
-    start = 4
-    end = 16
+    start = 9 ## first day of experiment
+    end = 16 ## last day of experiment
     sample_length_full_quality_info_df = None
     full_length_sample_quality_info_df = None
     full_info_df = None

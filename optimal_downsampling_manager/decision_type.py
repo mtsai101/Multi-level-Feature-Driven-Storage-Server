@@ -14,5 +14,7 @@ class Decision():
         self.prev_fps = prev_fps 
         self.prev_bitrate = prev_bitrate
         self.sample_quality_ratio = sample_quality_ratio
-        self.storage_dir = os.path.join(storage_dir, clip_name.split('_')[-2]+"_00-00-00")
+        date = clip_name.split('_')[-2]
+        self.year, self.month, self.day = list(map(int, date.split("-")))
+        self.storage_dir = os.path.join(storage_dir, date + "_00-00-00")
         
